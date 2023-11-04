@@ -61,7 +61,7 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 
 int cage_Finder_64512(vector<vector<int>> cup62512, int count_62512_cups, vector<vector<int>>& cage_64512_rings);
 
-void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, string solute1, int topSolute, string solute2, int count_solute2, int frameCounter);
+void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, int topSolute, string solute1, string solute2, string solute3, string solute4, int frameCounter, map<string,int>map_count, map<string,int>real_map);
 
 void print_usage();
 

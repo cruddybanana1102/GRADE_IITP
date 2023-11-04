@@ -20,7 +20,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with GRADE.  If not, see <https://www.gnu.org/licenses/>.
 
-
+#include <bits/stdc++.h>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -1532,28 +1532,28 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
                             atoms_set.insert(atoms);
                             
                             outFile << setprecision(3);
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "OW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms][0];
                             outFile << setw(8) << atom_Pos[atoms][1];
                             outFile << setw(8) << atom_Pos[atoms][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW1" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW1" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+1][0];
                             outFile << setw(8) << atom_Pos[atoms+1][1];
                             outFile << setw(8) << atom_Pos[atoms+1][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW2" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW2" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+2][0];
                             outFile << setw(8) << atom_Pos[atoms+2][1];
                             outFile << setw(8) << atom_Pos[atoms+2][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "MW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "MW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+3][0];
                             outFile << setw(8) << atom_Pos[atoms+3][1];
                             outFile << setw(8) << atom_Pos[atoms+3][2];
@@ -1579,28 +1579,28 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
                             atoms_set.insert(atoms);
                             
                             outFile << setprecision(3);
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "OW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms][0];
                             outFile << setw(8) << atom_Pos[atoms][1];
                             outFile << setw(8) << atom_Pos[atoms][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW1" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW1" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+1][0];
                             outFile << setw(8) << atom_Pos[atoms+1][1];
                             outFile << setw(8) << atom_Pos[atoms+1][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW2" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW2" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+2][0];
                             outFile << setw(8) << atom_Pos[atoms+2][1];
                             outFile << setw(8) << atom_Pos[atoms+2][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "MW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "MW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+3][0];
                             outFile << setw(8) << atom_Pos[atoms+3][1];
                             outFile << setw(8) << atom_Pos[atoms+3][2];
@@ -2124,7 +2124,7 @@ int cage_Finder_64512(vector<vector<int>> cup62512, int count_62512_cups, vector
 
 // New Function--------------------------------------------------------------------------------------
 
-void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, string solute1, int topSolute, string solute2, int count_solute2, int frameCounter)
+void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, int topSolute, string solute1, string solute2,string solute3, string solute4, int frameCounter,map<string,int>map_count, map<string,int>real_map)
 
 {
     
@@ -2203,28 +2203,28 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                             atoms_set.insert(atoms);
                             
                             outFile << setprecision(3);
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "OW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms][0];
                             outFile << setw(8) << atom_Pos[atoms][1];
                             outFile << setw(8) << atom_Pos[atoms][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW1" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW1" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+1][0];
                             outFile << setw(8) << atom_Pos[atoms+1][1];
                             outFile << setw(8) << atom_Pos[atoms+1][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW2" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW2" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+2][0];
                             outFile << setw(8) << atom_Pos[atoms+2][1];
                             outFile << setw(8) << atom_Pos[atoms+2][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "MW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "MW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+3][0];
                             outFile << setw(8) << atom_Pos[atoms+3][1];
                             outFile << setw(8) << atom_Pos[atoms+3][2];
@@ -2250,28 +2250,28 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                             atoms_set.insert(atoms);
                             
                             outFile << setprecision(3);
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "OW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms][0];
                             outFile << setw(8) << atom_Pos[atoms][1];
                             outFile << setw(8) << atom_Pos[atoms][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW1" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW1" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+1][0];
                             outFile << setw(8) << atom_Pos[atoms+1][1];
                             outFile << setw(8) << atom_Pos[atoms+1][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW2" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW2" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+2][0];
                             outFile << setw(8) << atom_Pos[atoms+2][1];
                             outFile << setw(8) << atom_Pos[atoms+2][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "MW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "MW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+3][0];
                             outFile << setw(8) << atom_Pos[atoms+3][1];
                             outFile << setw(8) << atom_Pos[atoms+3][2];
@@ -2297,28 +2297,28 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                             atoms_set.insert(atoms);
                             
                             outFile << setprecision(3);
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "OW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms][0];
                             outFile << setw(8) << atom_Pos[atoms][1];
                             outFile << setw(8) << atom_Pos[atoms][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW1" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW1" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+1][0];
                             outFile << setw(8) << atom_Pos[atoms+1][1];
                             outFile << setw(8) << atom_Pos[atoms+1][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "HW2" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "HW2" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+2][0];
                             outFile << setw(8) << atom_Pos[atoms+2][1];
                             outFile << setw(8) << atom_Pos[atoms+2][2];
                             outFile << "\n";
                             atom_counter++;
                             
-                            outFile << setw(5) << sol_counter << "SOL" << setw(7) << "MW" << setw(5) << atom_counter;
+                            outFile << setw(5) << sol_counter << "wat" << setw(7) << "MW" << setw(5) << atom_counter;
                             outFile << setw(8) << atom_Pos[atoms+3][0];
                             outFile << setw(8) << atom_Pos[atoms+3][1];
                             outFile << setw(8) << atom_Pos[atoms+3][2];
@@ -2465,24 +2465,48 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
     for(int i = 1 ; i <= solute1.size(); ++i){s1 = 10 - i;}
     for(int i = 1 ; i <= solute2.size(); ++i){s2 = 10 - i;}
     
-    
+    map<string,string>molecule_id;
+    molecule_id["CO2"]="CB";
+    molecule_id["Met"]="CM";
+    molecule_id["METH"]="ME";
+    molecule_id["NH3"]="NH";
+
+
     for (int i = 0 ; i < solutes_size ; i++)
     {
-        if(i < topSolute )
+        if(i>=real_map[solute1] and i<real_map[solute2] )
         {
             
             outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute1  << setw(s1) << "CB" << setw(5) << ++meth_counter2;
+            outFile << setw(5) << i+1 << solute1  << setw(s1) << molecule_id[solute1] << setw(5) << ++meth_counter2;
             outFile << setw(8) << solutes[i][0];
             outFile << setw(8) << solutes[i][1];
             outFile << setw(8) << solutes[i][2];
             outFile << "\n";
             atom_counter++;
         }
-        if(i >= topSolute)
+        else if(i>=real_map[solute2] and i<real_map[solute3])
         {
             outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute2  << setw(s2) << "CB" << setw(5) << ++meth_counter2;
+            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute2] << setw(5) << ++meth_counter2;
+            outFile << setw(8) << solutes[i][0];
+            outFile << setw(8) << solutes[i][1];
+            outFile << setw(8) << solutes[i][2];
+            outFile << "\n";
+            atom_counter++;
+        }
+        else if(i>=real_map[solute3] and i<real_map[solute4]){
+            outFile << setprecision(3);
+            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute3] << setw(5) << ++meth_counter2;
+            outFile << setw(8) << solutes[i][0];
+            outFile << setw(8) << solutes[i][1];
+            outFile << setw(8) << solutes[i][2];
+            outFile << "\n";
+            atom_counter++;
+        }
+        else if(i>=real_map[solute4]){
+            outFile << setprecision(3);
+            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute4] << setw(5) << ++meth_counter2;
             outFile << setw(8) << solutes[i][0];
             outFile << setw(8) << solutes[i][1];
             outFile << setw(8) << solutes[i][2];
@@ -2518,13 +2542,49 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                 {
                     temp_meth_number_holder.push_back(j);
                     
-                    outFile << setprecision(3);
-                    outFile << setw(5) << j+1 << "CBX" << setw(7) << "CB" << setw(5) << ++meth_counter;
-                    outFile << setw(8) << solutes[j][0];
-                    outFile << setw(8) << solutes[j][1];
-                    outFile << setw(8) << solutes[j][2];
-                    outFile << "\n";
-                    atom_counter++;
+                    // outFile << setprecision(3);
+                    // outFile << setw(5) << j+1 << "CBX" << setw(7) << "CB" << setw(5) << ++meth_counter;
+                    // outFile << setw(8) << solutes[j][0];
+                    // outFile << setw(8) << solutes[j][1];
+                    // outFile << setw(8) << solutes[j][2];s
+                    // outFile << "\n";
+                    // atom_counter++;
+                    if(j>=real_map[solute1] and j<real_map[solute2]){
+                        outFile << setprecision(3);
+                        outFile << setw(5) << j+1 << solute1  << "X" << setw(6) << molecule_id[solute1] << setw(5) << ++meth_counter;
+                        outFile << setw(8) << solutes[j][0];
+                        outFile << setw(8) << solutes[j][1];
+                        outFile << setw(8) << solutes[j][2];
+                        outFile << "\n";
+                        atom_counter++;
+                    }
+                    else if(j>=real_map[solute2] and j<real_map[solute3]){
+                        outFile << setprecision(3);
+                        outFile << setw(5) << j+1 << solute2  << "X" << setw(6) << molecule_id[solute2] << setw(5) << ++meth_counter;
+                        outFile << setw(8) << solutes[j][0];
+                        outFile << setw(8) << solutes[j][1];
+                        outFile << setw(8) << solutes[j][2];
+                        outFile << "\n";
+                        atom_counter++;
+                    }
+                    else if(j>=real_map[solute3] and j<real_map[solute4]){
+                        outFile << setprecision(3);
+                        outFile << setw(5) << j+1 << solute3  << "X" << setw(6) << molecule_id[solute3] << setw(5) << ++meth_counter;
+                        outFile << setw(8) << solutes[j][0];
+                        outFile << setw(8) << solutes[j][1];
+                        outFile << setw(8) << solutes[j][2];
+                        outFile << "\n";
+                        atom_counter++;
+                    }
+                    else if(j>=real_map[solute4]){
+                        outFile << setprecision(3);
+                        outFile << setw(5) << j+1 << solute4  << "X" << setw(6) << molecule_id[solute4] << setw(5) << ++meth_counter;
+                        outFile << setw(8) << solutes[j][0];
+                        outFile << setw(8) << solutes[j][1];
+                        outFile << setw(8) << solutes[j][2];
+                        outFile << "\n";
+                        atom_counter++;
+                    }
                 }
             }
             
