@@ -336,7 +336,7 @@ int main(int argc, char *argv[])
 
                 istringstream streamA(line);
                 streamA >> str1 >> str2 >> int1 >> x >> y >> z;
-                cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
+                //cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
                 //cout << "str2 = "<< str2; 
                 //cout << "x = " << x; 
                 //cout << "y = " << y;
