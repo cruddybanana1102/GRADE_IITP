@@ -39,6 +39,14 @@
 
 using namespace std;
 
+template <typename T>
+ostream& operator<<( ostream& os, const vector<T>& vector)
+{
+    for ( auto element : vector)
+    {os << element<< "  ";}
+    return os;
+}    
+
 // Main function ----------------------------------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
@@ -199,7 +207,7 @@ int main(int argc, char *argv[])
         cout << " -s1 " << s2;
     }
 
-    cout << "\n\n";
+    //cout << "\n\n";
     //-------------------------------------------------------------------------------------
 
     vector<vector<int>> My_neigh;
@@ -274,9 +282,13 @@ int main(int argc, char *argv[])
         // Following if statement makes sure the "Natoms" always has the correct number, even if the code skips the first frame due to FR being greater than 1. (Added in v1.18)
         if (lineNumber == 2 || (lineNumber == (2 + 3 * frameCounter + frameCounter * Natoms) && !fileIN.eof()))
         {
+            cout << "Reading 2nd line of .gro file for the no.of atoms" << endl;
+
             istringstream streamA(line);
 
             streamA >> Natoms;
+
+            cout << " Number of atoms = " << Natoms << endl;
         }
         size_t found = 0;
         size_t found_time = 0;
@@ -302,7 +314,8 @@ int main(int argc, char *argv[])
             if (found_time != string::npos)
                 cout << line.substr(found_time) << " ps\n";
             else
-                cout << "\n";
+                //cout << "\n";
+                //cout << "line 310";
 
             if (found == string::npos)
                 cout << line << endl;
@@ -323,15 +336,15 @@ int main(int argc, char *argv[])
             atom_positions.clear();
             atom_positions.push_back(temp_vect);
 
-            //while (atom_positions.size() <= Natoms && atom_positions.size() <= 10005)
+            //while (atom_positions.size() <= Natoms && atom_positions.size() < 9999)
             while ( atom_positions.size( ) <= Natoms)
             {
 
                 temp_vect.clear();
 
                 getline(fileIN, line);
-                cout<<"Currently on line no." << lineNumber;
-                cout<<"\n";
+                //cout<<"Currently on line no." << lineNumber;
+                //cout<<"\n";
                 lineNumber++;
 
                 istringstream streamA(line);
@@ -355,6 +368,7 @@ int main(int argc, char *argv[])
                     if (count_solvent == 1)
                     {
                         firstSOL = lineNumber;
+                        cout << " lineNumber = " << lineNumber<<" firstSOL = " << firstSOL << endl;
                     }
                 }
                 else
@@ -376,6 +390,10 @@ int main(int argc, char *argv[])
                     //     count_solute2++;
                     // }
                     solute1_norm = line.substr(5, 7); // Get the name of first solute in system.
+                    cout << " solute1_norm = " << solute1_norm << endl;
+                    
+                    //cout << " lineNumber " << lineNumber << " has solute atom!" << endl; // to comment out later
+                    //cout << line << endl;
                     size_t found_space = solute1_norm.find_first_of(" ");
                     solute1_norm = solute1_norm.substr(0, found_space);
                     if(mp.find(solute1_norm)==mp.end()){
@@ -384,19 +402,22 @@ int main(int argc, char *argv[])
                     map_count[solute1_norm]++;
                     count_solute++;
                     solutes.push_back(temp_vect);
+                    //cout << "solute vector now looks like " << solutes << endl;
                 }
-                cout << " count_solvent = " << count_solvent << endl;
+                //cout << " count_solvent = " << count_solvent << endl;
 	
 		//cout << "count_solute = " << count_solute << std::endl;
             }
 
             while (atom_positions.size() <= Natoms && atom_positions.size() > 9999)
             {
+                //This loop is never executed
 
                 temp_vect.clear();
 
                 getline(fileIN, line);
                 lineNumber++;
+                cout << " Executing the next while loop " << endl;
 
                 istringstream streamA(line);
 
@@ -449,15 +470,18 @@ int main(int argc, char *argv[])
 
             if (frameCounter == 1)
             {
+                cout << "frameCounter = 1" << endl;
                 topSolute = firstSOL - 3;
+                cout << " firstSOL = " << firstSOL << endl;
+                cout << "topSolute = " << topSolute << endl;
                 if (in_s1 == 0)
                 {
-                    cout << "topSolute = " << topSolute;
+                    //cout << "topSolute = " << topSolute;
                     cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
                 }
                 else
                 {
-                    cout << "topSolute = " << topSolute;
+                    //cout << "topSolute = " << topSolute;
                     cout << "solute1: " << s1 << " " << topSolute << " atoms ";
                 }
                 // if( (in_s1==0 && in_s2==1) || (in_s1==1 && in_s2==1) || (in_s1==0 && in_s2==0))
@@ -526,6 +550,7 @@ int main(int argc, char *argv[])
             vector<vector<int>> ring5, ring6, ring5_temp, ring6_temp;
             vector<vector<int>> My_neigh_ring6, My_neigh_ring5, My_neigh_ring6_ring5;
 
+            //cout << " Running ring_Finder " << endl; // to comment out later 
             ring_Finder(count_solute, Natoms, Nneigh, My_neigh, ring5_temp, ring6_temp, topSolute, count_solvent, atom_positions, boxX, boxY, boxZ, HBOND_DIST, delta_p, delta_h);
 
             if (ring5_temp.size() > 0)
@@ -544,11 +569,14 @@ int main(int argc, char *argv[])
 
             vector<unsigned long int> N_ring5_neigh; // Vector of ring-neighbours of all rings.
 
+            //cout << " Running find_shared_edges_ring5 " << endl; // to comment out later
             find_shared_edges_ring5(count_ring5, ring5, My_neigh_ring5, N_ring5_neigh);
 
             vector<unsigned long int> N_ring6_neigh;
 
             vector<unsigned long int> N_ring6_ring5_neigh;
+
+            //cout << " Running find_shared_edges_ring6_ring5 " << endl; // to comment out later
             find_shared_edges_ring6_ring5(count_ring6, count_ring5, ring5, ring6, My_neigh_ring6_ring5, N_ring6_ring5_neigh);
 
             if (count_ring5 == 0 && count_ring6 == 0)
@@ -557,6 +585,7 @@ int main(int argc, char *argv[])
             }
 
             vector<vector<int>> cup512;
+            //cout << " Running cup_512_Finder; " << endl; // comment out later
             cup_512_Finder(ring5, count_ring5, N_ring5_neigh, My_neigh_ring5, cup512);
             int count_512_cups = 0;
             if (cup512.size() != 0)
@@ -574,6 +603,7 @@ int main(int argc, char *argv[])
             }
 
             vector<vector<int>> cup62512;
+            //cout << " Running cup_62512_Finder; " << endl;
             cup_62512_Finder(ring6, count_ring6, My_neigh_ring6_ring5, N_ring6_ring5_neigh, ring5, N_ring5_neigh, My_neigh_ring5, cup62512);
             int count_62512_cups = 0;
             if (cup62512.size() != 0)
@@ -627,6 +657,7 @@ int main(int argc, char *argv[])
 
             cage_64512_count = cage_Finder_64512(cup62512, count_62512_cups, cage_64512_rings);
 
+            cout << " Now showing the output of method cage_Finder_64512() " << endl; // comment out later
             cout << "# 6⁴5¹²\tcage: " << cage_64512_count << "\n\n";
 
             print_vmd_cage64512_frings(cup62512, cage_64512_count, cage_64512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solutes, methane_64512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map);
