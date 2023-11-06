@@ -19,6 +19,7 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with GRADE.  If not, see <https://www.gnu.org/licenses/>.
+
 #include <bits/stdc++.h>
 #include <iomanip>
 #include <iostream>
@@ -47,10 +48,35 @@ ostream& operator<<( ostream& os, const vector<T>& vector)
     return os;
 }    
 
+//std::string strip(const std::string& str)
+//{
+    //size_t first = str.find_first_not_of( " \t\n\r");
+    //if ( first == std::string::npos)
+        //return "";
+//
+    //size_t last = str.find_not_last_of( " \t\n\r")
+    //return str.substr( first, (last-first+1));
+//}
+
+// function that checks if container contains element
+bool contains(const vector<std::string>& container, std::string element)
+{
+   for( std::string str : container) 
+       if (str == element)
+           return true;
+   return false;
+}
+
 // Main function ----------------------------------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
     double const Version = 1.00;
+
+    //test contains()method
+    //vector<std::string> arr = { " Alice", "Bob", "Vegana", "Indian"};
+    //if( contains(arr, "vegana"))
+            //cout << "Haan bhai hai" << endl;
+    //else cout << "Nahi hai" << endl;
 
     // output program information.
     cout << std::fixed;
@@ -335,6 +361,7 @@ int main(int argc, char *argv[])
 
             int count_solvent = 0;
             vector<vector<double>> solutes;
+            vector<std::string> solute_names;
             count_solute = 0;
             temp_vect = {0, 0, 0};
             atom_positions.clear();
@@ -350,14 +377,16 @@ int main(int argc, char *argv[])
                 //cout<<"Currently on line no." << lineNumber;
                 //cout<<"\n";
                 lineNumber++;
+                vector<std::string> solute_names;
 
                 istringstream streamA(line);
                 streamA >> str1 >> str2 >> int1 >> x >> y >> z;
                 //cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
-                //cout << "str2 = "<< str2; 
-                //cout << "x = " << x; 
-                //cout << "y = " << y;
-                //cout << "z = " << z ;
+                cout << "str1 = " << str1 << endl;
+                cout << "str2 = "<< str2 << endl;
+                cout << "x = " << x; 
+                cout << "y = " << y;
+                cout << "z = " << z ;
                 //cout << "\n";
 
                 temp_vect.push_back(x);
@@ -403,6 +432,7 @@ int main(int argc, char *argv[])
                     //cout << line << endl;
                     size_t found_space = solute1_norm.find_first_of(" ");
                     solute1_norm = solute1_norm.substr(0, found_space);
+                    //if(contains( solute_names, solute1_norm))
                     cout << "solute1_norm "<< solute1_norm << endl;
                     if(mp.find(solute1_norm)==mp.end()){
                        mp[solute1_norm]=count_solute+count_solvent;
