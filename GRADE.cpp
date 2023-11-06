@@ -403,6 +403,7 @@ int main(int argc, char *argv[])
                        mp[solute1_norm]=count_solute+count_solvent;
                     }
                     map_count[solute1_norm]++;
+                    cout << "map_count[solute1_norm] = " << map_count[solute1_norm] <<endl;
                     count_solute++;
                     solutes.push_back(temp_vect);
                     //cout << "solute vector now looks like " << solutes << endl;
@@ -482,7 +483,8 @@ int main(int argc, char *argv[])
                 {
                     //cout << "topSolute = " << topSolute;
                     //cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
-                    cout <<  "solute1: " << topSolute << " atoms"; 
+                    //cout <<  "solute1: " << topSolute << " atoms"; 
+                    cout << "solute1: " << map_count[solute1_norm] << endl;
                 }
                 else
                 {
@@ -662,7 +664,7 @@ int main(int argc, char *argv[])
 
             cage_64512_count = cage_Finder_64512(cup62512, count_62512_cups, cage_64512_rings);
 
-            cout << " Now showing the output of method cage_Finder_64512() " << endl; // comment out later
+            //cout << " Now showing the output of method cage_Finder_64512() " << endl; // comment out later
             cout << "# 6⁴5¹²\tcage: " << cage_64512_count << "\n\n";
 
             print_vmd_cage64512_frings(cup62512, cage_64512_count, cage_64512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solutes, methane_64512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map);
