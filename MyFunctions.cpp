@@ -1850,7 +1850,13 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
 
 double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neigh, vector<vector<double>>& atom_Pos, double& boxX, double& boxY, double& boxZ, vector<int>& Nneigh, int Natoms, int topSolute, string time, double HBOND_DIST ){
     
-    vector<int> currentPair;        //Current pair of axygen atoms to be considered.
+    // ... //
+    
+    //Map is not needed for f4 calculation and binning
+    //vector<int> currentPair;        //Current pair of axygen atoms to be considered.
+    
+    // ... //
+
     vector<double> temp_vec;        //This is used to sort the 4 H pair distances.
     vector<double> A, B, C, D, AB, BC, CD, ABC, BCD;
     map<vector<int>,int> pairMap;   //A map to exclude double calculation of torsion angle between atom 'i-j' or 'j-i'.
@@ -1859,21 +1865,37 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
     double phi=0, phi_avg=0, sum=0, magnitude_ABC=0, magnitude_BCD=0;          //Parameters used in cross product calculation.
     int dih_A_index = 0, dih_B_index = 0, dih_C_index = 0, dih_D_index = 0;         //Four atoms of the dihedral.
 
+    // ... //
+	
+	vector<vector<double>> f4; //Atom index, coordinates, and f4 parameters, for all oxygen atoms
+    vector<double> f4_tmp; //Temporary holder for each pair of oxygen atoms
+    int k = 0; //Count holder for neighbours of each oxygen atom
+	double f4_cum; //Cumulative value of f4 for each oxygen atom with its neighbours
+	
+	// ... //
+
     for ( int i = topSolute + 1 ; i < topSolute + count_solvent  ; i+=4 )   //Loop over oxygen atoms, starting after solutes.
     {
         if (My_neigh[i].size() > 0 )                        //If current oxygen has any neighbors, do the following
         {
             for (int j = 1 ; j < My_neigh[i].size() ; j++)      //Loop over all the neighbors of oxygen 'i'.
             {
-
-                currentPair.push_back(i);
-                currentPair.push_back(My_neigh[i][j]);
+                // ... //
+				
+                //currentPair.push_back(i);
+                //currentPair.push_back(My_neigh[i][j]);
                 
-                sort(currentPair.begin(), currentPair.end());   //Sort items in map.
+                //sort(currentPair.begin(), currentPair.end());   //Sort items in map.
+              	
+              	// ... //
               
-                if (!pairMap[currentPair])              //If the currentPair does not exist in the map, do the following(all calculations):
+                if (true)              //Condtional to check existence of a pair in map is not needed
                 {
-                    pairMap[currentPair] = 1;
+                    // ... //
+                
+				    //pairMap[currentPair] = 1;
+                    
+                    // ... //
                     
                     //Find the outermost hydrogen atoms in the two current water molecules.
                     
@@ -2017,7 +2039,17 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     
                     phi = acos( sum / (magnitude_ABC * magnitude_BCD) );                      //Keep the result in radians for cos calculation.
 
-                    phi_avg += cos(3*phi);
+                    // ... //
+					
+					//Updating the cumulative f4 value
+					f4_cum += cos(3*phi);
+					
+					//Updating the number of neighbours for this atom with index 'i'
+					k++;
+					
+                    //phi_avg += cos(3*phi); //Calculation is not needed
+                    
+                    // ... //
                     
                     //Find the angle:(end)----------------------
                     
@@ -2033,14 +2065,66 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     BCD.clear();
                     sum = 0;
                  }
-                else    pairMap[currentPair]++ ;        //If currentPair already exists in the map, increase the frequency.
-                currentPair.clear();                    
+
+            // ... //
+               
+            //else    pairMap[currentPair]++ ;        //If currentPair already exists in the map, increase the frequency.
+            //currentPair.clear();
+				
+			// ... //                    
             }
+
+            // ... //
+		
+			//Saving the index, coordinates, and f4 parameter value to the temporary holder
+			f4_tmp.push_back(i);
+			f4_tmp.push_back(atom_Pos[i][0]);
+			f4_tmp.push_back(atom_Pos[i][1]);
+			f4_tmp.push_back(atom_Pos[i][2]);
+			f4_tmp.push_back(f4_cum/k);
+			
+			//Copying the data from the temporary holder to 'f4'
+			f4.push_back(f4_tmp);
+			
+			//Reseting values for next iteration
+			f4_tmp.clear();
+			k = 0;
+			f4_cum = 0;
+		
+			// ... //
         }
     }
     
+    // ... //
+
+    //Writing the data to 'f4_and_coordinates.xyz' in append mode
+    ofstream outdata;
+    outdata.open("f4_and_coordinates.xyz", ofstream::app);
+
+    int number_of_rows = f4.size(); //Number of oxygen atoms with a non-zero number of neighbours
+
+    if(!outdata) {
+        cout << "Error : file could not be opened" << endl; //Error handling
+        exit(1);
+    }
+
+    outdata << number_of_rows << endl; //Writing 'number_of_rows' to the first line 
+    outdata << endl; //Second line does not matter for files of 'xyz' format
+
+    for(int i = 0; i < number_of_rows; i = i + 1) {
+        outdata << "O" << " " << f4[i][1] << " " << f4[i][2] << " " << f4[i][3] << " " << f4[i][4] << endl; // Print name, x, y, z, f4 in a '.xyz' file
+    }
+
+    outdata.close();
+
+    //Reseting data for next frame
+    f4.clear();
+    
     //cout << "phi_avg= " << phi_avg/count_solvent << "\n\n";
-    return phi_avg/count_solvent;
+    //return phi_avg/count_solvent; //This value is not of importance and will not give an accurate answer with the present state of this code
+	return 0;
+	
+	// ... //
 }
 
 // New Function--------------------------------------------------------------------------------------

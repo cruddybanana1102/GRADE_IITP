@@ -264,15 +264,19 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    ofstream outFile_F4;
-    if (in_F4 == 1) // If F4 flag option is on, open a file for F4 as a function of time.
-    {
-        remove("F4.xvg"); // Remove any existing F4.xvg file and create a new one.
-        outFile_F4.open("F4.xvg", ofstream::app);
-        outFile_F4 << "# --------------------------------------- \n";
-        outFile_F4 << "#|Frame\t|F4\t\t|Time(ps)\t|" << endl;
-        outFile_F4 << "# --------------------------------------- \n";
-    }
+    //This file is not needed
+    //ofstream outFile_F4;
+    //if(in_F4 == 1)                          //If F4 flag option is on, open a file for F4 as a function of time.
+    //{
+    //    remove("F4.xvg");       //Remove any existing F4.xvg file and create a new one. 
+    //    outFile_F4.open("F4.xvg", ofstream::app);
+    //    outFile_F4 << "# --------------------------------------- \n" ;
+    //    outFile_F4 << "#|Frame\t|F4\t\t|Time(ps)\t|" << endl;
+    //    outFile_F4 << "# --------------------------------------- \n" ;
+
+    //}
+
+    // ... //
 
     // Start reading the input file.
     while (!fileIN.eof())
@@ -676,11 +680,24 @@ int main(int argc, char *argv[])
 
             if (in_F4 == 1) // If F4 flag is provided, calculate F4.
             {
+                // ... //
+				
+				//Opening files to wipe them out on every run before writing to them
+				ofstream outdata;
+				outdata.open("f4_and_coordinates.xyz");
+				outdata.close();
+				
+				// ... //
+
                 F4_value = calc_F4(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, topSolute, time, HBOND_DIST);
-                if (F4_value > 0)
-                    outFile_F4 << frameCounter << "\t| " << F4_value << "\t| " << time << endl;
-                else
-                    outFile_F4 << frameCounter << "\t|" << F4_value << "\t| " << time << endl; // The if-else condition takes care of the extra space needed for "-" sign and alligns the output(lazy way!).
+                
+                // ... //
+
+                //These conditonals are not required
+                //if(F4_value > 0) outFile_F4 << frameCounter << "\t| " << F4_value << "\t| " << time << endl;
+                //else outFile_F4 << frameCounter << "\t|" << F4_value << "\t| " << time << endl;        //The if-else condition takes care of the extra space needed for "-" sign and alligns the output(lazy way!).
+                
+                // ... //
             }
         }
     } // End of reading the input file.
@@ -688,8 +705,12 @@ int main(int argc, char *argv[])
     fileIN.close();
     outFile.close();
 
-    if (in_F4 == 1)
-        outFile_F4.close();
+    // ... //
+
+    //Line not required if the file was never opened
+    //if( in_F4 == 1 )outFile_F4.close();
+
+    // ... //
 
     return 0;
 
