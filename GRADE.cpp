@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
 
                 atom_positions.push_back(temp_vect);
 
-                if (line.find("wat") != string::npos) // If line includes "SOL", then add to number of count_solvent.          Else, add to number of count_solute.
+                if (line.find("wat") != string::npos || line.find( "SOL") != string::npos) // If line includes "SOL", then add to number of count_solvent.          Else, add to number of count_solute.
                 {
                     count_solvent++;
                     cout << " count_solvent = " << count_solvent << endl;
@@ -370,6 +370,7 @@ int main(int argc, char *argv[])
                     if (count_solvent == 1)
                     {
                         firstSOL = lineNumber;
+                        cout << "Now on line 373" << "; value of firstSOL is " << firstSOL << endl;
                         //cout << " lineNumber = " << lineNumber<<" firstSOL = " << firstSOL << endl;
                     }
                 }
@@ -483,8 +484,8 @@ int main(int argc, char *argv[])
                 {
                     //cout << "topSolute = " << topSolute;
                     //cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
-                    //cout <<  "solute1: " << topSolute << " atoms"; 
-                    cout << "solute1: " << map_count[solute1_norm] << endl;
+                    cout <<  "solute1: " << topSolute << " atoms"; 
+                    //cout << "solute1: " << map_count[solute1_norm] << endl;
                 }
                 else
                 {
