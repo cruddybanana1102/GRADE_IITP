@@ -365,10 +365,12 @@ int main(int argc, char *argv[])
                 if (line.find("wat") != string::npos) // If line includes "SOL", then add to number of count_solvent.          Else, add to number of count_solute.
                 {
                     count_solvent++;
+                    cout << " count_solvent = " << count_solvent << endl;
+                    cout << " lineNumber = " << lineNumber << endl;
                     if (count_solvent == 1)
                     {
                         firstSOL = lineNumber;
-                        cout << " lineNumber = " << lineNumber<<" firstSOL = " << firstSOL << endl;
+                        //cout << " lineNumber = " << lineNumber<<" firstSOL = " << firstSOL << endl;
                     }
                 }
                 else
@@ -390,12 +392,13 @@ int main(int argc, char *argv[])
                     //     count_solute2++;
                     // }
                     solute1_norm = line.substr(5, 7); // Get the name of first solute in system.
-                    cout << " solute1_norm = " << solute1_norm << endl;
+                    //cout << " solute1_norm = " << solute1_norm << endl;
                     
                     //cout << " lineNumber " << lineNumber << " has solute atom!" << endl; // to comment out later
                     //cout << line << endl;
                     size_t found_space = solute1_norm.find_first_of(" ");
                     solute1_norm = solute1_norm.substr(0, found_space);
+                    cout << "solute1_norm "<< solute1_norm << endl;
                     if(mp.find(solute1_norm)==mp.end()){
                        mp[solute1_norm]=count_solute+count_solvent;
                     }
@@ -414,6 +417,7 @@ int main(int argc, char *argv[])
                 //This loop is never executed
 
                 temp_vect.clear();
+                cout << " THIS LOOP IS BEING EXECTU" << endl;
 
                 getline(fileIN, line);
                 lineNumber++;
@@ -477,7 +481,8 @@ int main(int argc, char *argv[])
                 if (in_s1 == 0)
                 {
                     //cout << "topSolute = " << topSolute;
-                    cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
+                    //cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
+                    cout <<  "solute1: " << topSolute << " atoms"; 
                 }
                 else
                 {
