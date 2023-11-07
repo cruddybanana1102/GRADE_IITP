@@ -1,0 +1,19 @@
+#!/bin/bash
+#"tester script for various input files( *.gro)"
+
+make clean
+echo  "................"
+echo "MAKING GRADE EXECUTABLE"
+echo "................"
+make
+arg_file=$1
+out_file="${arg_file:0:-4}"
+echo "$out_file"
+test_str="test."
+out_file="$test_str$out_file"
+echo "..............."
+echo " RUNNING GRADE EXECUTABLE FOR INPUT FILE $arg_file"
+echo " ............."
+./GRADE -i $arg_file -f4 yes > $out_file
+echo "DONE"
+echo "Check the output in file $out_file"

@@ -377,16 +377,16 @@ int main(int argc, char *argv[])
                 //cout<<"Currently on line no." << lineNumber;
                 //cout<<"\n";
                 lineNumber++;
-                vector<std::string> solute_names;
+                //vector<std::string> solute_names;
 
                 istringstream streamA(line);
                 streamA >> str1 >> str2 >> int1 >> x >> y >> z;
                 //cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
                 cout << "str1 = " << str1 << endl;
                 cout << "str2 = "<< str2 << endl;
-                cout << "x = " << x; 
-                cout << "y = " << y;
-                cout << "z = " << z ;
+                //cout << " x = " << x; 
+                //cout << " y = " << y;
+                //cout << " z = " << z ;
                 //cout << "\n";
 
                 temp_vect.push_back(x);
@@ -432,8 +432,14 @@ int main(int argc, char *argv[])
                     //cout << line << endl;
                     size_t found_space = solute1_norm.find_first_of(" ");
                     solute1_norm = solute1_norm.substr(0, found_space);
-                    //if(contains( solute_names, solute1_norm))
-                    cout << "solute1_norm "<< solute1_norm << endl;
+                    if(contains( solute_names, solute1_norm))
+                        cout << " already ecnountered this solute name " << solute1_norm << endl;
+                    else {
+                        cout << " New solute encountered: " << solute1_norm << endl;
+                        solute_names.push_back(solute1_norm);
+                        cout << solute1_norm << " added to container" << endl;
+                    }
+                    //cout << "solute1_norm "<< solute1_norm << endl;
                     if(mp.find(solute1_norm)==mp.end()){
                        mp[solute1_norm]=count_solute+count_solvent;
                     }
@@ -511,14 +517,17 @@ int main(int argc, char *argv[])
             if (frameCounter == 1)
             {
                 cout << "frameCounter = 1" << endl;
-                topSolute = firstSOL - 3;
-                cout << " firstSOL = " << firstSOL << endl;
-                cout << "topSolute = " << topSolute << endl;
+                //topSolute = firstSOL - 3;
+                //cout << " firstSOL = " << firstSOL << endl;
+                //cout << "topSolute = " << topSolute << endl;
                 if (in_s1 == 0)
                 {
                     //cout << "topSolute = " << topSolute;
                     //cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
-                    cout <<  "solute1: " << topSolute << " atoms"; 
+                    //cout <<  "solute1: " << topSolute << " atoms"; 
+                    cout << "solute names are as follows " << solute_names << endl;
+                    for( auto solute : solute_names)
+                        cout << " count of " << solute << " atoms = " << map_count[solute] << endl;
                     //cout << "solute1: " << map_count[solute1_norm] << endl;
                 }
                 else
