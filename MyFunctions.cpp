@@ -2112,10 +2112,101 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
     outdata << endl; //Second line does not matter for files of 'xyz' format
 
     for(int i = 0; i < number_of_rows; i = i + 1) {
-        outdata << "O" << " " << f4[i][1] << " " << f4[i][2] << " " << f4[i][3] << " " << f4[i][4] << endl; // Print name, x, y, z, f4 in a '.xyz' file
+        outdata << "O" << " " << f4[i][1]*10 << " " << f4[i][2]*10 << " " << f4[i][3]*10 << " " << f4[i][4] << endl; // Print name, x(A), y(A), z(A), f4 in a '.xyz' file
     }
 
     outdata.close();
+
+    //Binning the data to 'binning_x.txt', 'binning_y.txt', 'binning_z.txt' in append mode
+    int bin_x, bin_y, bin_z; //Bin numbers to identify where each atom belongs
+
+    double bin_sep = 0.1; //Seperation between 2 bins (Default value for box lengths is '4.7 nm' corresponding to 48 bins)
+
+    int nbin_x = (boxX / bin_sep) + 1; //Number of bins along x
+    int nbin_y = (boxY / bin_sep) + 1; //Number of bins along y 
+    int nbin_z = (boxZ / bin_sep) + 1; //Number of bins along z
+
+    double f4_avg_x[nbin_x]; //f4 holder for each bin along x
+    int number_per_bin_x[nbin_x]; //Number of molecules falling in each bin along x 
+    for(int i = 0; i < nbin_x; i++) {
+        f4_avg_x[i] = 0;
+        number_per_bin_x[i] = 0;
+    }
+    
+    double f4_avg_y[nbin_y]; //f4 holder for each bin along y
+    int number_per_bin_y[nbin_y]; //Number of molecules falling in each bin along y
+    for(int i = 0; i < nbin_y; i++) {
+        f4_avg_y[i] = 0;
+        number_per_bin_y[i] = 0;
+    }
+    
+    double f4_avg_z[nbin_z]; //f4 holder for each bin along z
+    int number_per_bin_z[nbin_z]; //Number of molecules falling in each bin along z
+    for(int i = 0; i < nbin_z; i++) {
+        f4_avg_z[i] = 0;
+        number_per_bin_z[i] = 0;
+    }
+
+    for(int i = 0; i < f4.size(); i++) {
+        bin_x = (f4[i][1] / bin_sep) + 1; //Bin number along x
+        bin_y = (f4[i][2] / bin_sep) + 1; //Bin number along y
+        bin_z = (f4[i][3] / bin_sep) + 1; //Bin number along z
+
+        number_per_bin_x[bin_x - 1]++; //Updatinng the number of molecules in bins along x
+        number_per_bin_y[bin_y - 1]++; //Updatinng the number of molecules in bins along y
+        number_per_bin_z[bin_z - 1]++; //Updatinng the number of molecules in bins along z
+
+        f4_avg_x[bin_x - 1] = f4_avg_x[bin_x - 1] + f4[i][4]; //Updatinng the f4 for bins along x
+        f4_avg_y[bin_y - 1] = f4_avg_y[bin_y - 1] + f4[i][4]; //Updatinng the f4 for bins along y
+        f4_avg_z[bin_z - 1] = f4_avg_z[bin_z - 1] + f4[i][4]; //Updatinng the f4 for bins along z  
+    }
+
+    ofstream outdata_x;
+    outdata_x.open("binning_x.xvg", ofstream::app);
+    ofstream outdata_y;
+    outdata_y.open("binning_y.xvg", ofstream::app);
+    ofstream outdata_z;
+    outdata_z.open("binning_z.xvg", ofstream::app);
+
+    for(int i = 0; i < nbin_x; i++) {
+        if(number_per_bin_x[i] != 0) {
+            f4_avg_x[i] = f4_avg_x[i] / number_per_bin_x[i]; //converting the f4 value to average f4 value for each bin along x
+            
+            if(!outdata_x) {
+                cout << "Error : file could not be opened" << endl; //Error handling
+                exit(1);
+            }
+            outdata_x << i+1 << " " << number_per_bin_x[i] << " " << f4_avg_x[i] << endl;
+        }
+    }
+
+    for(int i = 0; i < nbin_y; i++) {
+        if(number_per_bin_y[i] != 0) {
+            f4_avg_y[i] = f4_avg_y[i] / number_per_bin_y[i]; //converting the f4 value to average f4 value for each bin along y
+            
+            if(!outdata_y) {
+                cout << "Error : file could not be opened" << endl; //Error handling
+                exit(1);
+            }
+            outdata_y << i+1 << " " << number_per_bin_y[i] << " " << f4_avg_y[i] << endl;
+        }
+    }
+
+    for(int i = 0; i < nbin_z; i++) {
+        if(number_per_bin_z[i] != 0) {
+            f4_avg_z[i] = f4_avg_z[i] / number_per_bin_z[i]; //converting the f4 value to average f4 value for each bin along z
+            
+            if(!outdata_z) {
+                cout << "Error : file could not be opened" << endl; //Error handling
+                exit(1);
+            }
+            outdata_z << i+1 << " " << number_per_bin_z[i] << " " << f4_avg_z[i] << endl; 
+        }
+    }
+
+    outdata_x.close();
+    outdata_y.close();
+    outdata_z.close();
 
     //Reseting data for next frame
     f4.clear();

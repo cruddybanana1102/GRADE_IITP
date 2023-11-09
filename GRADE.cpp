@@ -69,7 +69,28 @@ bool contains(const vector<std::string>& container, std::string element)
 
 // Main function ----------------------------------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
-{
+{   
+    // ... //
+
+    //Opening files to wipe them out on every run before writing to them
+    ofstream outdata;
+    outdata.open("f4_and_coordinates.xyz");
+    outdata.close();
+
+    ofstream outdata_x;
+    outdata_x.open("binning_x.xvg");
+    outdata_x.close();
+
+    ofstream outdata_y;
+    outdata_y.open("binning_y.xvg");
+    outdata_y.close();
+
+    ofstream outdata_z;
+    outdata_z.open("binning_z.xvg");
+    outdata_z.close();
+
+    // ... //
+
     double const Version = 1.00;
 
     //test contains()method
@@ -719,13 +740,6 @@ int main(int argc, char *argv[])
 
             if (in_F4 == 1) // If F4 flag is provided, calculate F4.
             {
-                // ... //
-				
-				//Opening files to wipe them out on every run before writing to them
-				ofstream outdata;
-				outdata.open("f4_and_coordinates.xyz");
-				outdata.close();
-				
 				// ... //
 
                 F4_value = calc_F4(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, topSolute, time, HBOND_DIST);
