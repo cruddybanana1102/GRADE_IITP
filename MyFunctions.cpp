@@ -38,12 +38,128 @@
 
 using namespace std;
 
+template <typename T>
+ostream& operator<<( ostream& os, const vector<T>& vector)
+{
+    for ( auto element : vector)
+    {os << element<< "  ";}
+    return os;
+}
 
     // New Function--------------------------------------------------------------------------------------
 
 //using namespace std::chrono;
 
-void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_neigh, vector<vector<double>>& atom_Pos, double& boxX, double& boxY, double& boxZ, vector<int>& Nneigh, int Natoms, int topSolute, string time, double HBOND_DIST ){
+Point::Point() : x(0.0), y(0.0), z(0.0) {}
+
+Point::Point(double new_x, double new_y, double new_z) : x(new_x), y(new_y), z(new_z) {}
+
+Point Point::from_vector(vector<long double> v)
+{
+    if(v.size() == 3)
+    {
+        Point p;
+
+        p.x = v[0];
+        p.y = v[1];
+        p.z = v[2];
+
+        return p;
+    }
+    else{std::cout << "vecctor input is not of size 3" << std::endl; Point p_; return p_;}
+}
+
+Atom::Atom() : atom_name(" "), coordinates() {}
+
+Atom::Atom(std::string& s, Point& p) : atom_name(s), coordinates(p) {}
+
+Molecule::Molecule() : mol_name(" ") {}
+
+Molecule::Molecule(std::string& s) : mol_name(s) {}
+
+std::map<char, double> masses = {
+        {'C', 12.01},   // Carbon
+        {'N', 14.01},   // Nitrogen
+        {'O', 16.00},   // Oxygen
+        {'H', 1.01}     // Hydrogen
+};
+//void get_masses()
+//{
+//    masses['H'] = 1.0;
+//    masses['C'] = 12.0;
+//    masses['N'] = 14.0;
+//    masses['O'] = 16.0;
+//}
+
+void Molecule::append_atom(Atom& atom)
+{
+    std::vector<Atom> v = this->atoms;
+    v.push_back(atom);
+    this->atoms = v;
+    v.clear();
+}
+
+Point operator+(Point p, Point q)
+{
+    Point sum(p.x + q.x, p.y + q.y, p.z + q.z);
+    return sum;
+}
+
+Point operator*(double mass, Point p)
+{
+    Point q(mass*p.x, mass*p.y, mass*p.z);
+    return q;
+}
+
+Point Molecule::get_com()
+{
+    double denominator = 0.0;
+    Point numerator(0.0, 0.0, 0.0);
+
+    bool Met = false;
+    if(strip_ld(this->mol_name) == "Met"){
+        cout << "Met found! ";
+        if(this->atoms.size() == 1){
+            cout << " has only one atom" << endl;
+            Met = true;
+            //return 0.0625*this->atoms[0].coordinates;
+        }
+    }
+    for(int i = 0; i < this->atoms.size(); i++)
+    {
+        Atom atom = atoms[i];
+        double mass = masses[atom.atom_name[0]];
+        if(Met)
+            mass = 16.04;
+        //double mass = 0.0;
+        //Point c = mass*atom.coordinates;
+        //cout << "yaha tak sahi hai" << endl;
+        numerator = numerator + mass*atom.coordinates;
+        denominator = denominator + mass;
+    }
+    if(denominator) return ((double)(1/denominator))*numerator;
+    else{cout << " Total mass of molecule is zero!! Please check" << std::endl; return numerator;}
+}
+
+//New Function
+std::string strip_ld(std::string input) {
+    std::string result;
+
+    // Find the first non-digit character
+    size_t i = 0;
+    while (i < input.length() && std::isdigit(input[i])) {
+        ++i;
+    }
+
+    // Append the remaining characters to the result string
+    result = input.substr(i);
+
+    return result;
+}
+
+//New Function
+void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_neigh, vector<vector<double>>& atom_Pos, double& boxX, double& boxY, double& boxZ, vector<int>& Nneigh, int Natoms, string time, double HBOND_DIST )
+{
     
     string line, str1, str2, str3;  //str(i) and int(i) hold unused data.
     int neigh_counter=0;
@@ -61,17 +177,19 @@ void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_
     My_neigh.clear();
     Nneigh.clear();
     
-    for (int i = 0 ; i < topSolute+1 ; i++){My_neigh.push_back(temp_vect2);}        //Fill My_neigh with zero's for solutes, i.e., make first topsolute lines of My_neigh file empty. This is needed for other calculations.
+    for (int i = 0 ; i < count_solute+1 ; i++)
+    //for ( int i = 0; i<=count_solute; i++)
+    {My_neigh.push_back(temp_vect2);}        //Fill My_neigh with zero's for solutes, i.e., make first topsolute lines of My_neigh file empty. This is needed for other calculations.
     
     temp_vect2.clear();
     
-    for (int i = topSolute+1 ; i < topSolute + count_solvent ; i+=4)      // i is Oxygen index
+    for (int i = count_solute+1 ; i < count_solute + count_solvent ; i+=4)      // i is Oxygen index
     {
         neigh_counter = 0;
         temp_vect2.clear();
         temp_vect2.push_back(0);
         
-        for (int j = topSolute+1 ; j < topSolute + count_solvent ; j+=4)       // j is 2nd Oxygen index
+        for (int j = count_solute+1 ; j < count_solute + count_solvent ; j+=4)       // j is 2nd Oxygen index
         {
             if(i != j)
             {
@@ -94,10 +212,13 @@ void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_
                 {
                     neigh_counter++;
                     
+
                     temp_vect2.push_back(j);
+                    
                 }
             }
         }
+        //cout << "temp_vect2 = " << temp_vect2 << endl;  
         
         My_neigh.push_back(temp_vect2);
         Nneigh.push_back(neigh_counter);
@@ -105,6 +226,8 @@ void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_
         My_neigh.push_back({0});
         My_neigh.push_back({0});
         My_neigh.push_back({0});
+
+        //cout << "My_neigh = " << My_neigh << endl;
         
         
     }
@@ -138,12 +261,12 @@ void calc_Distance(int count_solvent, int count_solute, vector<vector<int>>& My_
 //
 //    for (int i = 0 ; i < Nneigh.size() ; i++)
 //    {
-//        outFile << "Nneigh[" << topSolute+1 + (4*i) << "]= " << Nneigh[i] << "\n";
+//        outFile << "Nneigh[" << count_solute+1 + (4*i) << "]= " << Nneigh[i] << "\n";
 //        for (int j = 1 ; j < Nneigh[i]+1 ; j++)
 //        {
 //            if(Nneigh[i] != 0)
 //            {
-//                outFile << "My_neigh[" << topSolute+1 + (4*i) << "][" << j << "]= " << My_neigh[topSolute+1 + (4*i)][j] << "\n";
+//                outFile << "My_neigh[" << count_solute+1 + (4*i) << "][" << j << "]= " << My_neigh[count_solute+1 + (4*i)][j] << "\n";
 //            }
 //        }
 //        outFile << "\n";
@@ -1460,9 +1583,11 @@ int cage_Finder(vector<vector<int>> cups, unsigned long count_cups, vector<vecto
 // New Function--------------------------------------------------------------------------------------
 // New Function--------------------------------------------------------------------------------------
 
-void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, string solute1, int topSolute, string solute2, int count_solute2, int frameCounter)
+void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solute_positions, size_t & meth_counter, string solute1, int topSolute, string solute2, int count_solute2, int frameCounter)
 
 {
+    //cout << "is this function ever called?" << endl;
+    //This function is never called, I dont understand the purpose of this really. like wtf
     
     unsigned long int N_rings = 0;      //Number of rings in a cage. cage 512 has 12 and cage 62512 has 14.
     if(cage_rings.size() != 0){N_rings = cage_rings[0].size();}
@@ -1473,7 +1598,7 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
     int ring_size;
     int atom_counter=1;        //"atom_counter" is a counter for atom number in gro file. It should reset to one for each frame.
     int sol_counter=1;         //counter for number of SOL in each frame.
-    meth_counter=0;      //counter for number of Methanes/Methanol inside cages.
+    //meth_counter=0;      //counter for number of Methanes/Methanol inside cages.
     unsigned long int tot_atoms=0;            // total number of atoms in gro file.
     string out6, out5, out;
     set<int> atoms_set;
@@ -1490,6 +1615,7 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
     out5 = rawFilename + "_cage512-temp.gro";
     out6 = rawFilename + "_cage62512-temp.gro";
     
+    cout << " print vmd cage frings " << endl;
     istringstream streamB(box_size_xyz);
     streamB >> boxX >> boxY >> boxZ ;
     
@@ -1508,7 +1634,7 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
     
     std::ofstream outFile (out, std::ofstream::app);     //Open file and append to it.
     outFile.setf(ios::fixed, ios::floatfield);           //Make output numbers look neat
-    outFile << "Generated by GROMACS : t= " << time << "\n";      //First line of gro file, comment and frame time.
+    outFile << "Generated by GROMACS,  : t= " << time << "\n";      //First line of gro file, comment and frame time.
     outFile << tot_atoms << "\n";
     
     for(int l = 0 ; l < N_cage ; l++)       //Loop over all the cages.
@@ -1577,6 +1703,7 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
                                                         //If atoms already exists in the set, it will not print out.
                             
                             atoms_set.insert(atoms);
+                            //cout << " inside last  nested for " << endl;
                             
                             outFile << setprecision(3);
                             outFile << setw(5) << sol_counter << "wat" << setw(7) << "OW" << setw(5) << atom_counter;
@@ -1615,6 +1742,8 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
             }
         }
     }
+    cout << " out5 end  line 1637" << endl;
+
     
     
     
@@ -1727,23 +1856,24 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
     }
     //*_*_*_*_*_*_*_*_*_*_*_*_*_
     /*Write all the solutes ( solute1 and solute2 ) at the end of the gro file. This part is added in v1.16. */
-    size_t solutes_size = solutes.size();
+    //size_t solutes_size = solute_positions.size();
     int s1 = 7, s2 = 7;
     int meth_counter2=0;
     for(int i = 1 ; i <= solute1.size(); ++i){s1 = 10 - i;}
     for(int i = 1 ; i <= solute2.size(); ++i){s2 = 10 - i;}
     
     
-    for (int i = 0 ; i < solutes_size ; i++)
+    for (int i = 0 ; i < solute_positions.size() ; i++)
     {
         if(i < topSolute )
         {
             
             outFile << setprecision(3);
+            //cout << "meth_counter2 = " << meth_counter2 << endl;
             outFile << setw(5) << i+1 << solute1  << setw(s1) << "CB" << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
+            outFile << setw(8) << solute_positions[i][0];
+            outFile << setw(8) << solute_positions[i][1];
+            outFile << setw(8) << solute_positions[i][2];
             outFile << "\n";
             atom_counter++;
         }
@@ -1751,9 +1881,9 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
         {
             outFile << setprecision(3);
             outFile << setw(5) << i+1 << solute2  << setw(s2) << "CB" << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
+            outFile << setw(8) << solute_positions[i][0];
+            outFile << setw(8) << solute_positions[i][1];
+            outFile << setw(8) << solute_positions[i][2];
             outFile << "\n";
             atom_counter++;
         }
@@ -1767,11 +1897,11 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
     
     for ( int i = 0; i < count ; i++)        //Calculate distance between com of cages and each solute molecule.
     {
-        for ( int j = 0 ; j < solutes.size() ; j++)
+        for ( int j = 0 ; j < solute_positions.size() ; j++)
         {
-            dx = solutes[j][0] - all_cages_com[i][0];
-            dy = solutes[j][1] - all_cages_com[i][1];
-            dz = solutes[j][2] - all_cages_com[i][2];
+            dx = solute_positions[j][0] - all_cages_com[i][0];
+            dy = solute_positions[j][1] - all_cages_com[i][1];
+            dz = solute_positions[j][2] - all_cages_com[i][2];
             
             if (abs(dx) >= boxX * 0.5){ dx = boxX - abs(dx) ;}
             if (abs(dy) >= boxY * 0.5){ dy = boxY - abs(dy) ;}
@@ -1788,9 +1918,9 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
                     
                     outFile << setprecision(3);
                     outFile << setw(5) << j+1 << "CBX" << setw(7) << "CB" << setw(5) << ++meth_counter;
-                    outFile << setw(8) << solutes[j][0];
-                    outFile << setw(8) << solutes[j][1];
-                    outFile << setw(8) << solutes[j][2];
+                    outFile << setw(8) << solute_positions[j][0];
+                    outFile << setw(8) << solute_positions[j][1];
+                    outFile << setw(8) << solute_positions[j][2];
                     outFile << "\n";
                     atom_counter++;
                 }
@@ -1845,10 +1975,13 @@ void print_vmd_cage_frings(vector<vector<int>> cups, int cage_count, vector<vect
         remove(out.c_str());
         
     }
+    
     }
+
 // New Function--------------------------------------------------------------------------------------
 
-double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neigh, vector<vector<double>>& atom_Pos, double& boxX, double& boxY, double& boxZ, vector<int>& Nneigh, int Natoms, int topSolute, string time, double HBOND_DIST ){
+double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neigh, vector<vector<double>>& atom_Pos, double& boxX, double& boxY, double& boxZ, vector<int>& Nneigh, int Natoms, int topSolute, string time, std::string rawFilename, double HBOND_DIST )
+{
     
     // ... //
     
@@ -1870,12 +2003,14 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 	vector<vector<double>> f4; //Atom index, coordinates, and f4 parameters, for all oxygen atoms
     vector<double> f4_tmp; //Temporary holder for each pair of oxygen atoms
     int k = 0; //Count holder for neighbours of each oxygen atom
-	double f4_cum; //Cumulative value of f4 for each oxygen atom with its neighbours
+	double f4_cum = 0.0; //Cumulative value of f4 for each oxygen atom with its neighbours
 	
 	// ... //
 
     for ( int i = topSolute + 1 ; i < topSolute + count_solvent  ; i+=4 )   //Loop over oxygen atoms, starting after solutes.
     {
+        //f4_cum = 0;
+
         if (My_neigh[i].size() > 0 )                        //If current oxygen has any neighbors, do the following
         {
             for (int j = 1 ; j < My_neigh[i].size() ; j++)      //Loop over all the neighbors of oxygen 'i'.
@@ -1918,6 +2053,7 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     if (abs(dy) >= boxY * 0.5){ dy = boxY - abs(dy) ;}
                     if (abs(dz) >= boxZ * 0.5){ dz = boxZ - abs(dz) ;}
                     dist_OA_H2B = sqrt(dx*dx + dy*dy + dz*dz);
+
                     
                     //OB_H1A, OB=My_neigh[i][j], H1A=i+1
                     dx = atom_Pos[i+1][0] - atom_Pos[ My_neigh[i][j] ][0];
@@ -1983,6 +2119,8 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     }
                     
                     
+                    //cout << "index i: " << i << " " << atom_Pos[i][0] << "  " << atom_Pos[i][1] << endl;
+
                     //Find the angle:(begin)----------------------
                     
                     //Put atom positions in vectors A to C.
@@ -2029,7 +2167,9 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     
                     //Calculate the angle between ABC and BCD from their dot product. call it phi.
                     
+                    //sum = 0.0;
                     for (int i = 0 ; i < 3 ; i++)
+
                     {
                         sum += ABC.at(i) * BCD.at(i);
                     }
@@ -2037,12 +2177,30 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
                     magnitude_ABC = sqrt(pow(ABC.at(0), 2) + pow(ABC.at(1), 2) + pow(ABC.at(2), 2));
                     magnitude_BCD = sqrt(pow(BCD.at(0), 2) + pow(BCD.at(1), 2) + pow(BCD.at(2), 2));
                     
-                    phi = acos( sum / (magnitude_ABC * magnitude_BCD) );                      //Keep the result in radians for cos calculation.
+                    //std::cout << "sum = " << sum << std::endl;
+                    //std::cout << "magnitude_ABC = " << magnitude_ABC << std::endl;
+                    //std::cout << "magnitude_BCD = " << magnitude_BCD << std::endl;
+                    double new_sum = sum/(magnitude_ABC * magnitude_BCD);
+                    if(new_sum > 1.0)
+                        new_sum = 1.0;
+                    if(new_sum < -1.0)
+                        new_sum = -1.0; 
+                    //phi = acos( sum / (magnitude_ABC * magnitude_BCD) ) ;                      //Keep the result in radians for cos calculation.
+                    phi = acos(new_sum);
+                    //phi = phi * 180/3.1415;
+                    
 
                     // ... //
 					
 					//Updating the cumulative f4 value
+                    //if( j==0)
+                    //cout << "phi = " << phi << std::endl;
+                    //cout << "cos( 3*phi) = " << cos( 3*phi) << std::endl;
 					f4_cum += cos(3*phi);
+                    //cout << "f4_cum " << f4_cum << std::endl;
+                    //cout << "\n" << std::endl;
+                    
+                    
 					
 					//Updating the number of neighbours for this atom with index 'i'
 					k++;
@@ -2073,6 +2231,8 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 				
 			// ... //                    
             }
+            //cout <<  "f4_cum = " << f4_cum << std::endl;
+            //cout <<  "k = " << k << std::endl;
 
             // ... //
 		
@@ -2081,7 +2241,9 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 			f4_tmp.push_back(atom_Pos[i][0]);
 			f4_tmp.push_back(atom_Pos[i][1]);
 			f4_tmp.push_back(atom_Pos[i][2]);
-			f4_tmp.push_back(f4_cum/k);
+            if(k != 0)
+			    f4_tmp.push_back(f4_cum/k);
+            else f4_tmp.push_back(0.000000);
 			
 			//Copying the data from the temporary holder to 'f4'
 			f4.push_back(f4_tmp);
@@ -2093,13 +2255,15 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 		
 			// ... //
         }
+
+       //cout << "index i: " << i << " " << atom_Pos[i][0] << "  " << atom_Pos[i][1] << endl;
     }
     
     // ... //
 
     //Writing the data to 'f4_and_coordinates.xyz' in append mode
     ofstream outdata;
-    outdata.open("f4_and_coordinates.xyz", ofstream::app);
+    outdata.open(rawFilename + "_f4_coords.xyz", ofstream::app);
 
     int number_of_rows = f4.size(); //Number of oxygen atoms with a non-zero number of neighbours
 
@@ -2111,13 +2275,14 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
     outdata << number_of_rows << endl; //Writing 'number_of_rows' to the first line 
     outdata << endl; //Second line does not matter for files of 'xyz' format
 
-    for(int i = 0; i < number_of_rows; i = i + 1) {
-        outdata << "O" << " " << f4[i][1]*10 << " " << f4[i][2]*10 << " " << f4[i][3]*10 << " " << f4[i][4] << endl; // Print name, x(A), y(A), z(A), f4 in a '.xyz' file
+    double aggregate_f4 = 0.0;
+    for(int i = 0; i < number_of_rows; i++) {
+        outdata << "O" << " " << f4[i][1] << " " << f4[i][2] << " " << f4[i][3] << " " << f4[i][4] << endl; // Print name, x, y, z, f4 in a '.xyz' file
+        //if(!isnan(f4[i][4]))
+            aggregate_f4 += f4[i][4];
+        //else aggregate_f4 += 0.00;
     }
 
-    outdata.close();
-
-    //Binning the data to 'binning_x.txt', 'binning_y.txt', 'binning_z.txt' in append mode
     int bin_x, bin_y, bin_z; //Bin numbers to identify where each atom belongs
 
     double bin_sep = 0.1; //Seperation between 2 bins (Default value for box lengths is '4.7 nm' corresponding to 48 bins)
@@ -2126,24 +2291,24 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
     int nbin_y = (boxY / bin_sep) + 1; //Number of bins along y 
     int nbin_z = (boxZ / bin_sep) + 1; //Number of bins along z
 
-    double f4_avg_x[nbin_x]; //f4 holder for each bin along x
+    double f4_x[nbin_x]; //f4 holder for each bin along x
     int number_per_bin_x[nbin_x]; //Number of molecules falling in each bin along x 
     for(int i = 0; i < nbin_x; i++) {
-        f4_avg_x[i] = 0;
+        f4_x[i] = 0;
         number_per_bin_x[i] = 0;
     }
     
-    double f4_avg_y[nbin_y]; //f4 holder for each bin along y
+    double f4_y[nbin_y]; //f4 holder for each bin along y
     int number_per_bin_y[nbin_y]; //Number of molecules falling in each bin along y
     for(int i = 0; i < nbin_y; i++) {
-        f4_avg_y[i] = 0;
+        f4_y[i] = 0;
         number_per_bin_y[i] = 0;
     }
     
-    double f4_avg_z[nbin_z]; //f4 holder for each bin along z
+    double f4_z[nbin_z]; //f4 holder for each bin along z
     int number_per_bin_z[nbin_z]; //Number of molecules falling in each bin along z
     for(int i = 0; i < nbin_z; i++) {
-        f4_avg_z[i] = 0;
+        f4_z[i] = 0;
         number_per_bin_z[i] = 0;
     }
 
@@ -2156,9 +2321,9 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
         number_per_bin_y[bin_y - 1]++; //Updatinng the number of molecules in bins along y
         number_per_bin_z[bin_z - 1]++; //Updatinng the number of molecules in bins along z
 
-        f4_avg_x[bin_x - 1] = f4_avg_x[bin_x - 1] + f4[i][4]; //Updatinng the f4 for bins along x
-        f4_avg_y[bin_y - 1] = f4_avg_y[bin_y - 1] + f4[i][4]; //Updatinng the f4 for bins along y
-        f4_avg_z[bin_z - 1] = f4_avg_z[bin_z - 1] + f4[i][4]; //Updatinng the f4 for bins along z  
+        f4_x[bin_x - 1] = f4_x[bin_x - 1] + f4[i][4]; //Updatinng the f4 for bins along x
+        f4_y[bin_y - 1] = f4_y[bin_y - 1] + f4[i][4]; //Updatinng the f4 for bins along y
+        f4_z[bin_z - 1] = f4_z[bin_z - 1] + f4[i][4]; //Updatinng the f4 for bins along z  
     }
 
     ofstream outdata_x;
@@ -2170,37 +2335,37 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
 
     for(int i = 0; i < nbin_x; i++) {
         if(number_per_bin_x[i] != 0) {
-            f4_avg_x[i] = f4_avg_x[i] / number_per_bin_x[i]; //converting the f4 value to average f4 value for each bin along x
+            f4_x[i] = f4_x[i] / number_per_bin_x[i]; //converting the f4 value to average f4 value for each bin along x
             
             if(!outdata_x) {
                 cout << "Error : file could not be opened" << endl; //Error handling
                 exit(1);
             }
-            outdata_x << i+1 << " " << number_per_bin_x[i] << " " << f4_avg_x[i] << endl;
+            outdata_x << i+1 << " " << number_per_bin_x[i] << " " << f4_x[i] << endl;
         }
     }
 
     for(int i = 0; i < nbin_y; i++) {
         if(number_per_bin_y[i] != 0) {
-            f4_avg_y[i] = f4_avg_y[i] / number_per_bin_y[i]; //converting the f4 value to average f4 value for each bin along y
+            f4_y[i] = f4_y[i] / number_per_bin_y[i]; //converting the f4 value to average f4 value for each bin along y
             
             if(!outdata_y) {
                 cout << "Error : file could not be opened" << endl; //Error handling
                 exit(1);
             }
-            outdata_y << i+1 << " " << number_per_bin_y[i] << " " << f4_avg_y[i] << endl;
+            outdata_y << i+1 << " " << number_per_bin_y[i] << " " << f4_y[i] << endl;
         }
     }
 
     for(int i = 0; i < nbin_z; i++) {
         if(number_per_bin_z[i] != 0) {
-            f4_avg_z[i] = f4_avg_z[i] / number_per_bin_z[i]; //converting the f4 value to average f4 value for each bin along z
+            f4_z[i] = f4_z[i] / number_per_bin_z[i]; //converting the f4 value to average f4 value for each bin along z
             
             if(!outdata_z) {
                 cout << "Error : file could not be opened" << endl; //Error handling
                 exit(1);
             }
-            outdata_z << i+1 << " " << number_per_bin_z[i] << " " << f4_avg_z[i] << endl; 
+            outdata_z << i+1 << " " << number_per_bin_z[i] << " " << f4_z[i] << endl; 
         }
     }
 
@@ -2208,14 +2373,45 @@ double calc_F4(int count_solvent, int count_solute, vector<vector<int>>& My_neig
     outdata_y.close();
     outdata_z.close();
 
+    
+
+
+    outdata.close();
+
     //Reseting data for next frame
     f4.clear();
     
     //cout << "phi_avg= " << phi_avg/count_solvent << "\n\n";
     //return phi_avg/count_solvent; //This value is not of importance and will not give an accurate answer with the present state of this code
-	return 0;
+	return aggregate_f4/number_of_rows;
 	
 	// ... //
+    //cout << "inside calc_F4" << endl;
+}
+// New Function--------------------------------------------------------------------------------------
+std::map<int, double>  calc_time_avg_f4_z(std::string binning_file, int no_of_frames)
+{
+    ifstream binning_data(binning_file);
+
+    std::string line;
+    int bin;
+    int number;
+    double value;
+    std::map<int, double> f4_vs_dim; //stores f4 value for each bin
+    while(std::getline(binning_data, line))
+    {
+       istringstream iss(line); 
+       //iss >> bin >> number >> value;
+       iss >> bin;
+       iss >> number;
+       iss >> value; 
+       
+       f4_vs_dim[bin] = f4_vs_dim[bin] + value;
+    }
+
+    for(auto& it1: f4_vs_dim)
+        it1.second = it1.second/no_of_frames;
+    return f4_vs_dim;
 }
 
 // New Function--------------------------------------------------------------------------------------
@@ -2299,10 +2495,9 @@ int cage_Finder_64512(vector<vector<int>> cup62512, int count_62512_cups, vector
 
 // New Function--------------------------------------------------------------------------------------
 
-void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solutes, size_t & meth_counter, int topSolute, string solute1, string solute2,string solute3, string solute4, int frameCounter,map<string,int>map_count, map<string,int>real_map)
+void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector<vector<int>> cage_rings, vector<vector<int>> ring5, vector<vector<int>> ring6, vector<vector<double>> atom_Pos, string time, string rawFilename , string box_size_xyz, vector<vector<double>> solute_positions, size_t & meth_counter, int topSolute, string solute1, string solute2,string solute3, string solute4, int frameCounter,map<string,int>map_count, map<string,int>real_map, vector<std::string>arr_str2, vector<pair<std::string, vector<double>>> solute_atoms, vector<Molecule> molecules)
 
 {
-    
     unsigned long int N_rings = 0;      //Number of rings in a cage. cage 512 has 12, cage 62512 has 14 and cage 64512 has 28.
     if(cage_rings.size() != 0){N_rings = cage_rings[0].size();}
     
@@ -2356,12 +2551,17 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
     outFile << "Generated by GROMACS : t= " << time << "\n";      //First line of gro file, comment and frame time.
     outFile << tot_atoms << "\n";
     
+    //cout << "print vmd 64512 " << endl;
     for(int l = 0 ; l < N_cage ; l++)       //Loop over all the cages.
+
     {
         
         current_cage_com.clear();
         for(int m = 0 ; m < N_rings; m++)         //Loop over 6 or 7 rings of each cage.
         {
+
+        //cout << "print vmd 64512 " << endl;
+
             p = cage_rings[l][m];
             {
                 /************************/
@@ -2463,6 +2663,7 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                     ring_size = 5;
                     for (int q = 0 ; q < ring_size ; q++)       //Loop over all atoms of a ring.
                     {
+                        //cout << "Loop over all atoms of a ring " << endl;
                         atoms = ring5[p][q];
                         if(!atoms_set.count(atoms))
                         {                               //If atoms is not present in atoms_set, count will be zero, condition is one and
@@ -2571,6 +2772,7 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
                         cage_sum_x += atom_Pos[atoms][0];       //Find sum of x coordinate of all "O" atoms, for COM calcultaion.
                         cage_sum_y += atom_Pos[atoms][1];       //find sum of y coordinate of all "O" atoms, for COM calcultaion.
                         cage_sum_z += atom_Pos[atoms][2];       //Find sum of z coordinate of all "O" atoms, for COM calcultaion.
+                        //cout << " No core dump " << endl;
                     }
                     
                 }
@@ -2633,137 +2835,180 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
         current.clear();
     }
     //*_*_*_*_*_*_*_*_*_*_*_*_*_
-    /*Write all the solutes ( solute1 and solute2 ) at the end of the gro file. This part is added in v1.16. */
-    size_t solutes_size = solutes.size();
+    /*Write all the solute_atoms ( solute1 and solute2 ) at the end of the gro file. This part is added in v1.16. */
+    size_t solutes_size = solute_positions.size();
     int s1 = 7, s2 = 7;
     int meth_counter2=0;
     for(int i = 1 ; i <= solute1.size(); ++i){s1 = 10 - i;}
     for(int i = 1 ; i <= solute2.size(); ++i){s2 = 10 - i;}
     
     map<string,string>molecule_id;
-    molecule_id["CO2"]="CB";
-    molecule_id["Met"]="CM";
-    molecule_id["METH"]="ME";
-    molecule_id["NH3"]="NH";
+    //molecule_id["CO2"]="CB";
+    //molecule_id["Met"]="CM";
+    //molecule_id["METH"]="ME";
+    //molecule_id["NH3"]="NH";
 
-
-    for (int i = 0 ; i < solutes_size ; i++)
+    int last;
+    for (int i =0; i < solute_atoms.size() ; i++)
     {
-        if(i>=real_map[solute1] and i<real_map[solute2] )
-        {
-            
+        //if(i>=real_map[solute1] and i<real_map[solute2] )
+        //for(map<string,vector<vector<double>>>::iterator it = solute_atoms.begin(); it != solute_atoms.end(); ++it)
+        //{
+
+            pair<string, vector<double>> p = solute_atoms[i];
             outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute1  << setw(s1) << molecule_id[solute1] << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
+            //outFile << setw(5) << i+1 << solute1  << setw(s1) << molecule_id[solute1] << setw(5) << ++meth_counter2;
+            //outFile << setw(5) << i+1 << solute1  << setw(s1) << "CB" << setw(5) << ++meth_counter2;
+            outFile << setw(5) << i+1 << p.first << setw(s1) << arr_str2[i] << setw(5) << ++meth_counter2;
+            vector<double> coords = p.second;
+            outFile << setw(8) << coords[0];
+            outFile << setw(8) << coords[1];
+            outFile << setw(8) << coords[2];
             outFile << "\n";
             atom_counter++;
-        }
-        else if(i>=real_map[solute2] and i<real_map[solute3])
-        {
-            outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute2] << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
-            outFile << "\n";
-            atom_counter++;
-        }
-        else if(i>=real_map[solute3] and i<real_map[solute4]){
-            outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute3] << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
-            outFile << "\n";
-            atom_counter++;
-        }
-        else if(i>=real_map[solute4]){
-            outFile << setprecision(3);
-            outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute4] << setw(5) << ++meth_counter2;
-            outFile << setw(8) << solutes[i][0];
-            outFile << setw(8) << solutes[i][1];
-            outFile << setw(8) << solutes[i][2];
-            outFile << "\n";
-            atom_counter++;
-        }
+            //cout << "atom_counter " << atom_counter << endl;
+        //}
+        //else if(i>=real_map[solute2] and i<real_map[solute3])
+        //{
+            //outFile << setprecision(3);
+            ////outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute2] << setw(5) << ++meth_counter2;
+            //outFile << setw(5) << i+1 << solute2  << setw(s2) << arr_str2[i]<< setw(5) << ++meth_counter2;
+            //outFile << setw(8) << solute_positions[i][0];
+            //outFile << setw(8) << solute_positions[i][1];
+            //outFile << setw(8) << solute_positions[i][2];
+            //outFile << "\n";
+            //atom_counter++;
+        //}
+        //else if(i>=real_map[solute3] and i<real_map[solute4]){
+            //outFile << setprecision(3);
+            ////outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute3] << setw(5) << ++meth_counter2;
+            //outFile << setw(5) << i+1 << solute2  << setw(s2) << arr_str2[i] << setw(5) << ++meth_counter2;
+            //outFile << setw(8) << solute_positions[i][0];
+            //outFile << setw(8) << solute_positions[i][1];
+            //outFile << setw(8) << solute_positions[i][2];
+            //outFile << "\n";
+            //atom_counter++;
+        //}
+        //else if(i>=real_map[solute4]){
+            //outFile << setprecision(3);
+            ////outFile << setw(5) << i+1 << solute2  << setw(s2) << molecule_id[solute4] << setw(5) << ++meth_counter2;
+            //outFile << setw(5) << i+1 << solute2  << setw(s2) << arr_str2[i] << setw(5) << ++meth_counter2;
+            //outFile << setw(8) << solute_positions[i][0];
+            //outFile << setw(8) << solute_positions[i][1];
+            //outFile << setw(8) << solute_positions[i][2];
+            //outFile << "\n";
+            //atom_counter++;
+        //}
+            last = i;
     }
+
     //*_*_*_*_*_*_*_*_*_*_*_*_*_
-    
+    //
     //Write Methane molecules inside cages to the -temp.gro file.
     //Find methanes closeest to Center of Mass of each cage and write them to -temp.gro file output.
     vector<int> temp_meth_number_holder;
     temp_meth_number_holder.clear();
-    
+
     for ( int i = 0; i < count ; i++)        //Calculate distance between com of cages and each solute molecule.
     {
-        for ( int j = 0 ; j < solutes.size() ; j++)
+        for ( int j = 0 ; j < molecules.size() ; j++)
         {
-            dx = solutes[j][0] - all_cages_com[i][0];
-            dy = solutes[j][1] - all_cages_com[i][1];
-            dz = solutes[j][2] - all_cages_com[i][2];
-            
+            //cout << "now inside solute_atoms array " << endl;
+            //dx = solute_positions[j][0] - all_cages_com[i][0];
+            //dy = solute_positions[j][1] - all_cages_com[i][1];
+            //dz = solute_positions[j][2] - all_cages_com[i][2];
+
+            Molecule mol1 = molecules[j];
+            if(mol1.is_solute){
+            //cout << "Inside print function" << endl;
+            Point com = mol1.get_com();
+            Point cage_com;
+            cage_com = cage_com.from_vector(all_cages_com[i]);
+
+            double dx = com.x - cage_com.x; 
+            double dy = com.y - cage_com.y; 
+            double dz = com.z - cage_com.z; 
+
             if (abs(dx) >= boxX * 0.5){ dx = boxX - abs(dx) ;}
             if (abs(dy) >= boxY * 0.5){ dy = boxY - abs(dy) ;}
             if (abs(dz) >= boxZ * 0.5){ dz = boxZ - abs(dz) ;}
             
             dist = sqrt(dx*dx + dy*dy + dz*dz);
             
+            //cout << "molecule = " << mol1.mol_name << endl;
+            //cout << "j = " << j << " dist = " << dist << endl;
             if (dist <= 0.2)        //If distance between COM of cage and any Methane molecule is less than cut-off, append it to gro file.
             {
-                
                 if(find(temp_meth_number_holder.begin(), temp_meth_number_holder.end(), j) == temp_meth_number_holder.end()) //If the value of "j" (methane index) does not exist in the temp_meth_number_holder, then add it to the vector and write its coordinates to gro file. Otherwise, do not write it in gro output file. The find(v.begin(),v.end(),"value") gives the iterator number of found value in the vector. If the value is not in the vector, iterator will be equal to v.end().
                 {
                     temp_meth_number_holder.push_back(j);
+                    //cout << temp_meth_number
                     
                     // outFile << setprecision(3);
                     // outFile << setw(5) << j+1 << "CBX" << setw(7) << "CB" << setw(5) << ++meth_counter;
-                    // outFile << setw(8) << solutes[j][0];
-                    // outFile << setw(8) << solutes[j][1];
-                    // outFile << setw(8) << solutes[j][2];s
+                    // outFile << setw(8) << solute_positions[j][0];
+                    // outFile << setw(8) << solute_positions[j][1];
+                    // outFile << setw(8) << solute_positions[j][2];s
                     // outFile << "\n";
                     // atom_counter++;
-                    if(j>=real_map[solute1] and j<real_map[solute2]){
+                    //if(j>=real_map[solute1] and j<real_map[solute2])
+                    vector<Atom> atoms = mol1.atoms;
+                    for(int k = 0; k < atoms.size(); k++)
+                    {
+                        //pair<std::string, vector<double>> pX;
+                        //pX = solute_atoms[j];
+                        Atom atom = atoms[k];
+
+                        //cout << pX.first;
                         outFile << setprecision(3);
-                        outFile << setw(5) << j+1 << solute1  << "X" << setw(6) << molecule_id[solute1] << setw(5) << ++meth_counter;
-                        outFile << setw(8) << solutes[j][0];
-                        outFile << setw(8) << solutes[j][1];
-                        outFile << setw(8) << solutes[j][2];
+                        //outFile << setw(5) << j+1 << solute1  << "X" << setw(6) << molecule_id[solute1] << setw(5) << ++meth_counter;
+                        outFile << setw(5) << last+1 << mol1.mol_name << "X" << setw(6) << atom.atom_name << "X" << setw(4) << ++meth_counter;
+                        Point coordsX = atom.coordinates;
+                        //outFile << setw(8) << coordsX[0];
+                        //outFile << setw(8) << coordsX[1];
+                        //outFile << setw(8) << coordsX[2];
+                        outFile << setw(8) << coordsX.x;
+                        outFile << setw(8) << coordsX.y;
+                        outFile << setw(8) << coordsX.z;
                         outFile << "\n";
+                        last++; 
                         atom_counter++;
                     }
-                    else if(j>=real_map[solute2] and j<real_map[solute3]){
-                        outFile << setprecision(3);
-                        outFile << setw(5) << j+1 << solute2  << "X" << setw(6) << molecule_id[solute2] << setw(5) << ++meth_counter;
-                        outFile << setw(8) << solutes[j][0];
-                        outFile << setw(8) << solutes[j][1];
-                        outFile << setw(8) << solutes[j][2];
-                        outFile << "\n";
-                        atom_counter++;
-                    }
-                    else if(j>=real_map[solute3] and j<real_map[solute4]){
-                        outFile << setprecision(3);
-                        outFile << setw(5) << j+1 << solute3  << "X" << setw(6) << molecule_id[solute3] << setw(5) << ++meth_counter;
-                        outFile << setw(8) << solutes[j][0];
-                        outFile << setw(8) << solutes[j][1];
-                        outFile << setw(8) << solutes[j][2];
-                        outFile << "\n";
-                        atom_counter++;
-                    }
-                    else if(j>=real_map[solute4]){
-                        outFile << setprecision(3);
-                        outFile << setw(5) << j+1 << solute4  << "X" << setw(6) << molecule_id[solute4] << setw(5) << ++meth_counter;
-                        outFile << setw(8) << solutes[j][0];
-                        outFile << setw(8) << solutes[j][1];
-                        outFile << setw(8) << solutes[j][2];
-                        outFile << "\n";
-                        atom_counter++;
-                    }
+                    atoms.clear();
+                    //else if(j>=real_map[solute2] and j<real_map[solute3])
+                    //{
+                        //outFile << setprecision(3);
+                        //outFile << setw(5) << j+1 << solute2  << "X" << setw(6) << molecule_id[solute2] << setw(5) << ++meth_counter;
+                        //outFile << setw(8) << solute_positions[j][0];
+                        //outFile << setw(8) << solute_positions[j][1];
+                        //outFile << setw(8) << solute_positions[j][2];
+                        //outFile << "\n";
+                        //atom_counter++;
+                    //}
+                    //else if(j>=real_map[solute3] and j<real_map[solute4])
+                    //{
+                        //outFile << setprecision(3);
+                        //outFile << setw(5) << j+1 << solute3  << "X" << setw(6) << molecule_id[solute3] << setw(5) << ++meth_counter;
+                        //outFile << setw(8) << solute_positions[j][0];
+                        //outFile << setw(8) << solute_positions[j][1];
+                        //outFile << setw(8) << solute_positions[j][2];
+                        //outFile << "\n";
+                        //atom_counter++;
+                    //}
+                    //else if(j>=real_map[solute4])
+                    //{
+                        //outFile << setprecision(3);
+                        //outFile << setw(5) << j+1 << solute4  << "X" << setw(6) << molecule_id[solute4] << setw(5) << ++meth_counter;
+                        //outFile << setw(8) << solute_positions[j][0];
+                        //outFile << setw(8) << solute_positions[j][1];
+                        //outFile << setw(8) << solute_positions[j][2];
+                        //outFile << "\n";
+                        //atom_counter++;
+                    //}
                 }
             }
             
-        }
+        }}
     }
     
     outFile.close();
@@ -2813,7 +3058,67 @@ void print_vmd_cage64512_frings(vector<vector<int>> cups, int cage_count, vector
         
     }
     }
+//New Function
+int atoms_in_mol(std::string molecule)
+{
+    int ctr = 0;
+    int length = molecule.length();
+    if(molecule == "MetX")
+        ctr = 1;
+    else
+    for(int i = 0; i < length - 1; i = i + 2)
+    {
+        char a = static_cast<unsigned char>(molecule[i]);
+        if(std::isalpha(a))
+            if(a != 'X')
+                ctr++;
+        if(std::isdigit(a))
+            ctr = ctr + atoi(&a) - 1;
+    }
+    return ctr;
+}
 
+//New Function
+std::map<std::string, int> func(std::map<std::string, int>real_map,std::string cage_file)
+{
+    std::map<std::string,int> caged_count;
+    for(auto it: real_map)
+    {
+        std::string solute_name = it.first;
+        //if (line.find(solute_name + "X") != string::npos)
+        caged_count[solute_name + "X"] = count_caged(solute_name + "X", cage_file);
+    }
+    return caged_count;
+}
+
+//New Function
+int count_caged(std::string caged_name, std::string cage_file)
+{
+    ifstream CAGEFILE(cage_file, std::ios::in);
+    int ctr = 0;
+    std::string line;
+    while(getline(CAGEFILE, line))
+    {
+        if(line.find(caged_name) != std::string::npos)
+            ctr++;
+    }
+    return ctr;    
+}
+
+// New Function 
+void write_caged_info(int f, std::map<std::string, int> caged_map, std::string cage_type, std::string filename)
+{
+    fstream OFILE(filename, std::ios::app);
+    //OFILE << std::endl;
+    //OFILE << "Last line " << std::endl;
+    //OFILE << f << std::string(9-std::to_string(f).length(), ' ');
+    for(auto it : caged_map)
+    {
+        int int1 = cage_type.size() + it.first.size() + 5 - std::to_string(it.second).size();
+        OFILE << it.second << std::string(int1, ' ');
+    }
+    OFILE.close();
+}
 // New Function--------------------------------------------------------------------------------------
 void print_usage()
 {

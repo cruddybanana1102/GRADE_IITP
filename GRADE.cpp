@@ -35,66 +35,77 @@
 #include <set>
 #include <algorithm>
 #include <unistd.h>
-
+#include<chrono>
+#include "omp.h"
 #include "MyFunctions.hpp"
 
 using namespace std;
 
-template <typename T>
-ostream& operator<<( ostream& os, const vector<T>& vector)
+template <typename T1, typename T2>
+std::ostream& operator<<(std::ostream& os, const std::vector<std::pair<T1, T2>>& vec) {
+    os << "[ ";
+    for (const auto& pair : vec) {
+        os << "(" << pair.first << ", " << pair.second << ") ";
+    }
+    os << "]";
+    return os;
+}
+
+//overload to be able to print out maps
+template<typename key, typename value>
+ostream& operator<<(ostream& os, const std::map<key,value>& M)
 {
-    for ( auto element : vector)
+    os << "{";
+    for(auto pair : M)
+        os << pair.first << ":" << pair.second << ",  ";
+    os << "}";
+    return os;
+
+}
+
+//overload ostream to be able to cout vectors
+template <typename T>
+ostream& operator<<( ostream& os, const vector<T>& vec)
+{
+    for ( auto element : vec)
     {os << element<< "  ";}
     return os;
 }    
 
-//std::string strip(const std::string& str)
-//{
-    //size_t first = str.find_first_not_of( " \t\n\r");
-    //if ( first == std::string::npos)
-        //return "";
-//
-    //size_t last = str.find_not_last_of( " \t\n\r")
-    //return str.substr( first, (last-first+1));
-//}
-
-// function that checks if container contains element
-bool contains(const vector<std::string>& container, std::string element)
+bool contains(const std::vector<std::string>& container, std::string element)
 {
-   for( std::string str : container) 
-       if (str == element)
-           return true;
-   return false;
+    auto it = std::find(container.begin(), container.end(), element);
+    return it != container.end();
 }
+
+//template concat function
+template <typename T> 
+std::vector<T> concat(std::vector<T>& a , std::vector<T>& b)
+{
+    std::vector<T> c;
+  for(  auto e: a){
+      c.push_back(e);
+    }
+    for( auto e: b)
+    {
+        c.push_back( e);
+    }
+    return c;
+}
+
 
 // Main function ----------------------------------------------------------------------------------------------------------------
 int main(int argc, char *argv[])
-{   
-    // ... //
-
-    //Opening files to wipe them out on every run before writing to them
-    ofstream outdata;
-    outdata.open("f4_and_coordinates.xyz");
-    outdata.close();
-
-    ofstream outdata_x;
-    outdata_x.open("binning_x.xvg");
-    outdata_x.close();
-
-    ofstream outdata_y;
-    outdata_y.open("binning_y.xvg");
-    outdata_y.close();
-
-    ofstream outdata_z;
-    outdata_z.open("binning_z.xvg");
-    outdata_z.close();
-
-    // ... //
-
+{
     double const Version = 1.00;
 
+    int cage_512_count;
+    int cage_62512_count;
+    int cage_64512_count;
     //test contains()method
-    //vector<std::string> arr = { " Alice", "Bob", "Vegana", "Indian"};
+    //vector<int> ar2 = {9,8,10};
+    //vector<int> ar3 = concat(ar1, ar2);
+    //cout << "concat test: " << ar3 << endl;
     //if( contains(arr, "vegana"))
             //cout << "Haan bhai hai" << endl;
     //else cout << "Nahi hai" << endl;
@@ -105,7 +116,7 @@ int main(int argc, char *argv[])
     cout << "\n\n\t\t** GRADE - VERSION " << Version << " **\n\n";
 
     string inputFilename, s1, s2;
-    string outputFilename, rawFilename;
+    string outputFilename, rawFilename, outputFilename2;
     int DT = 1, FR = 1, THETA = 45;
     int in_theta = 0, in_fr = 0, in_dt = 0, in_r = 0, in_F4 = 0, in_d1 = 0, in_d2 = 0, in_s1 = 0, in_s2 = 0; // This parameter is for whether theta is given as input parameter (1) or taken as default value (0).
     double HBOND_DIST = 0.35;                                                                                // Command line input parameter for Hbond_distance cutoff, taken from '-r' flag.
@@ -195,6 +206,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
+
     if (inputFilename.empty())
     {
         cout << "**No Input Provided!**"
@@ -261,9 +273,12 @@ int main(int argc, char *argv[])
     int Natoms, count_solute = 0, count_solute2 = 0;
     vector<int> Nneigh;
     vector<vector<double>> atom_positions;
+    vector<vector<double>> solvent_positions;
+    vector<vector<double>> solute_positions;
     double F4_value = 0; // Value of F4 order parameter for each frame.
     vector<double> current_F4_line;
     vector<vector<double>> time_vs_F4; // This variable holds Time/frame_counter in first column and value of F4 order parameter in second column.
+    vector<std::string> molstrings;
 
     string line = "NONE", str1, str2, str3;
     int int1;
@@ -284,9 +299,11 @@ int main(int argc, char *argv[])
     map<string,int>mp,map_count,real_map;
 
     ofstream outFile;
+    ofstream outFile2;
     size_t found_ext = outputFilename.find_last_of(".");
     rawFilename = outputFilename.substr(0, found_ext);
     outputFilename = rawFilename + ".xvg";
+    outputFilename2 = rawFilename + "_cageF4_info.dat";
     string temp1, temp2, solute1_atom_finder, solute2_atom_finder;
     temp1 = rawFilename + "_cage62512.gro";
     temp2 = rawFilename + "_cage512.gro";
@@ -295,22 +312,30 @@ int main(int argc, char *argv[])
 
     // Create the header for outputfile.
     outFile.open(outputFilename, ofstream::app);
+    outFile2.open(outputFilename2, ofstream::app);
     outFile << "# ------------------------------------------------------------------------------------------------------- " << endl;
     outFile << "#|(Frame) Time(ps)\t\t|cage\t|filled_cage\t|cage\t|filled_cage\t|cage\t|filled_cage\t|" << endl;
     outFile << "#|\t\t\t\t|5¹²\t|5¹²\t\t|6²5¹²\t|6²5¹²\t\t|6⁴5¹²\t|6⁴5¹²\t\t|" << endl;
     outFile << "# ------------------------------------------------------------------------------------------------------- " << endl;
+    outFile2 << "Frame " << std::string(10, ' ') << "Time(ps)" << std::string(35-14, ' ') << "5¹²cage" << " 5¹²cage-filled" << " 6²5¹²cage" << " 6²5¹²cage-filled" << " 6⁴5¹²cage" << " 6⁴5¹²cage-filled " << "F4_value " << std::endl;
 
     ifstream fileIN;
     fileIN.open(inputFilename);
+    //permute( inputFilename);
+    //fileIN.open(permutedFile);
 
+    //ofstream log("oxygen_atoms", ios::out);
     // Error Check
-    if (fileIN.fail())
-    {
-        cerr << "Error Reading File"
-             << "\n";
-        exit(1);
-    }
+    //if (fileIN.fail())
+    //{
+        //cerr << "Error Reading File"
+             //<< "\n";
+        //exit(1);
+    //}
 
+    ofstream outdata;
+    outdata.open(rawFilename+"_f4_coords.xyz");
+    outdata.close();
     //This file is not needed
     //ofstream outFile_F4;
     //if(in_F4 == 1)                          //If F4 flag option is on, open a file for F4 as a function of time.
@@ -326,8 +351,11 @@ int main(int argc, char *argv[])
     // ... //
 
     // Start reading the input file.
+    int iter = 0;
+
     while (!fileIN.eof())
     {
+        cout << "\nStarted reading input file" << endl;
         getline(fileIN, line);
         lineNumber++;
         // Following if statement makes sure the "Natoms" always has the correct number, even if the code skips the first frame due to FR being greater than 1. (Added in v1.18)
@@ -346,27 +374,36 @@ int main(int argc, char *argv[])
         if (line.find("t="))
         {
             found_time = line.find("t=");
+            //cout << "Found time " << std::endl;
         }
         if (lineNumber == 1 || (lineNumber == (1 + 3 * frameCounter + frameCounter * Natoms) && !fileIN.eof())) // This is to find the first line of gro file.
         {
             frameCounter++;
+
             if (((frameCounter - 1) % FR) != 0)
                 continue; // If frameCounter-1 is not a multiple of FR, continue to next frame.
                           //"-1" is to ignore the frame with t=0.000. This ensures that FR=20 reads frames with t=0,20,40,... .
             if (found_time != string::npos) // If found_time is not null, do the following.
             {
+
                 time = line.substr(found_time + 3);
                 outFile << "(" << frameCounter << "\t) " << time << "\t\t| ";
+                //cout <<"NO core dumped here " << std::endl;
+                //if(to_string(frameCounter).length() < 5 && time.length()< 16)
+                outFile2 << frameCounter << std::string(5 - to_string(frameCounter).length(),' ') << time << std::string(35 - time.length(), ' ');
+                //else outFile2 << frameCounter << " " << time << " " ;
+                //cout << "line 393" << std::endl;
             }
             else
-                outFile << frameCounter << "\t\t\t| ";
+            {   outFile << frameCounter << "\t\t\t| ";
+                outFile2 << frameCounter << std::string(4, ' ') << std::string(16, ' ');
+            }
 
             cout << " frame#: " << frameCounter << ", ";
             if (found_time != string::npos)
                 cout << line.substr(found_time) << " ps\n";
             else
                 //cout << "\n";
-                //cout << "line 310";
 
             if (found == string::npos)
                 cout << line << endl;
@@ -381,34 +418,71 @@ int main(int argc, char *argv[])
             //vector<int> temp_vec = {0, 0, 0};
 
             int count_solvent = 0;
-            vector<vector<double>> solutes;
+            vector<pair<std::string,vector<double>>> solute_atoms;
+            vector<Molecule> molecules;
+            vector<std::string> arr_str2;
             vector<std::string> solute_names;
             count_solute = 0;
             temp_vect = {0, 0, 0};
             atom_positions.clear();
+            molstrings.clear();
+            //molecules.clear();
             atom_positions.push_back(temp_vect);
 
+            //cout << "line 396" << endl;
+            int it_count = 0;
             //while (atom_positions.size() <= Natoms && atom_positions.size() < 9999)
-            while ( atom_positions.size( ) <= Natoms)
+            //cout << "Natoms = " << Natoms << std::endl;
+            while (atom_positions.size() <= Natoms)
             {
 
                 temp_vect.clear();
 
                 getline(fileIN, line);
-                //cout<<"Currently on line no." << lineNumber;
-                //cout<<"\n";
                 lineNumber++;
-                //vector<std::string> solute_names;
 
                 istringstream streamA(line);
-                streamA >> str1 >> str2 >> int1 >> x >> y >> z;
-                //cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
-                cout << "str1 = " << str1 << endl;
-                cout << "str2 = "<< str2 << endl;
-                //cout << " x = " << x; 
-                //cout << " y = " << y;
-                //cout << " z = " << z ;
-                //cout << "\n";
+
+                //cout << "No core dumped here " << std::endl;
+                if(atom_positions.size() <= 9999)
+                {
+                     streamA >> str1 >> str2 >> int1 >> x >> y >> z;
+
+                     Point coordinates(x,y,z);
+                     Atom atom1(str2, coordinates);
+                     if(!contains(molstrings, str1)){
+                         molstrings.push_back(str1);
+                         Molecule mol1(str1);
+                         mol1.append_atom(atom1);
+                         molecules.push_back(mol1);
+                     }
+                     else{
+                         Molecule mol1;
+                         mol1 = molecules.back();
+                         mol1.append_atom(atom1);
+                         molecules.back() = mol1;
+                     } 
+                             //cout << "str1 = " << str1 << " str2 = " << str2 << " x = " << x << " ";
+                }
+                if( atom_positions.size() > 9999)
+                {
+                     streamA >> str1 >> str2 >> x >> y >> z;
+
+                     Point coordinates(x,y,z);
+                     Atom atom1(str2, coordinates);
+                     if(!contains(molstrings, str1)){
+                         molstrings.push_back(str1);
+                         Molecule mol1(str1);
+                         mol1.append_atom(atom1);
+                         molecules.push_back(mol1);
+                     }
+                     else{
+                         Molecule mol1;
+                         mol1 = molecules.back();
+                         mol1.append_atom(atom1);
+                         molecules.back() = mol1;
+                     } 
+                }
 
                 temp_vect.push_back(x);
                 temp_vect.push_back(y);
@@ -419,13 +493,24 @@ int main(int argc, char *argv[])
                 if (line.find("wat") != string::npos || line.find( "SOL") != string::npos) // If line includes "SOL", then add to number of count_solvent.          Else, add to number of count_solute.
                 {
                     count_solvent++;
-                    cout << " count_solvent = " << count_solvent << endl;
-                    cout << " lineNumber = " << lineNumber << endl;
+                    //cout << " count_solvent = " << count_solvent << endl;
+                    //cout << " lineNumber = " << lineNumber << endl;
+                    solvent_positions.push_back(temp_vect);
+                    //cout << "atom_positions " << atom_positions[atom_positions.size() -1]<< endl;
+                    //cout << "Solvent position = " << temp_vect << endl;
+                    
+                    Molecule mol1;
+                    mol1 = molecules.back();
+                    mol1.is_solute = false;
+                    molecules.back() = mol1;
                     if (count_solvent == 1)
                     {
                         firstSOL = lineNumber;
-                        cout << "Now on line 373" << "; value of firstSOL is " << firstSOL << endl;
-                        //cout << " lineNumber = " << lineNumber<<" firstSOL = " << firstSOL << endl;
+                    }
+                    if (line.find("OW") != string::npos)
+                    {
+                        //log << line;
+                        //log <<"\n";
                     }
                 }
                 else
@@ -446,34 +531,57 @@ int main(int argc, char *argv[])
 
                     //     count_solute2++;
                     // }
+                    arr_str2.push_back(str2);
+                    solute_positions.push_back(temp_vect);
                     solute1_norm = line.substr(5, 7); // Get the name of first solute in system.
                     //cout << " solute1_norm = " << solute1_norm << endl;
                     
+                    pair<string, vector<double>> p1;
                     //cout << " lineNumber " << lineNumber << " has solute atom!" << endl; // to comment out later
                     //cout << line << endl;
                     size_t found_space = solute1_norm.find_first_of(" ");
                     solute1_norm = solute1_norm.substr(0, found_space);
-                    if(contains( solute_names, solute1_norm))
-                        cout << " already ecnountered this solute name " << solute1_norm << endl;
-                    else {
-                        cout << " New solute encountered: " << solute1_norm << endl;
+
+                    p1.first = solute1_norm;
+                    p1.second = temp_vect;
+                    if(!contains( solute_names, solute1_norm)){
+                        //cout << " New solute encountered: " << solute1_norm << endl;
+                        //cout << " already encountered this solute name " << solute1_norm << endl;
                         solute_names.push_back(solute1_norm);
-                        cout << solute1_norm << " added to container" << endl;
+                        //cout << " lineNumber = " << lineNumber << endl;
+                    }
+                    else {
+                    //    //cout << " New solute encountered: " << solute1_norm << endl;
+                          //cout << " already encountered this solute name " << solute1_norm << endl;
+                    //    //cout << " lineNumber = " << lineNumber << endl;
+                    //    //cout << solute1_norm << " added to container" << endl;
                     }
                     //cout << "solute1_norm "<< solute1_norm << endl;
                     if(mp.find(solute1_norm)==mp.end()){
                        mp[solute1_norm]=count_solute+count_solvent;
                     }
                     map_count[solute1_norm]++;
-                    cout << "map_count[solute1_norm] = " << map_count[solute1_norm] <<endl;
+                    //cout << "map_count[solute1_norm] = " << map_count[solute1_norm] <<endl;
                     count_solute++;
-                    solutes.push_back(temp_vect);
-                    //cout << "solute vector now looks like " << solutes << endl;
+                    solute_atoms.push_back( p1);
+                    //molecules.push_back(mol);
                 }
                 //cout << " count_solvent = " << count_solvent << endl;
 	
 		//cout << "count_solute = " << count_solute << std::endl;
+                it_count++;
             }
+            //atom_positions.clear();
+            //cout << "atom_positions before concat = " << atom_positions.size( ) << endl;
+            atom_positions.erase( atom_positions.begin( )+1,atom_positions.end()) ;
+
+            auto v1 = concat(atom_positions, solute_positions);
+            //cout << " v1 = " << v1.size( ) << endl;
+            atom_positions = concat( v1, solvent_positions);
+            //atom_positions = concat(solute_positions, solvent_positions);
+            v1.clear();
+            solvent_positions.clear();
+            //cout << "atom_positions " << atom_positions.size() << endl;
 
             while (atom_positions.size() <= Natoms && atom_positions.size() > 9999)
             {
@@ -494,7 +602,7 @@ int main(int argc, char *argv[])
                 temp_vect.push_back(y);
                 temp_vect.push_back(z);
 
-                atom_positions.push_back(temp_vect);
+                //atom_positions.push_back(temp_vect);
 
                 if (line.find("wat") != string::npos) // If line includes "SOL"
                 {
@@ -520,7 +628,11 @@ int main(int argc, char *argv[])
                         }
                         map_count[solute2_norm]++;
                         count_solute++;
-                        solutes.push_back(temp_vect);
+                        pair<string, vector<double>> p2;
+                        p2.first = solute2_norm;
+                        p2.second = temp_vect;
+
+                        solute_atoms.push_back(p2);
                 }
                 cout << "count_solvent = " << count_solvent << endl;
             }
@@ -538,17 +650,25 @@ int main(int argc, char *argv[])
             if (frameCounter == 1)
             {
                 cout << "frameCounter = 1" << endl;
-                //topSolute = firstSOL - 3;
+                topSolute = firstSOL - 3;
                 //cout << " firstSOL = " << firstSOL << endl;
                 //cout << "topSolute = " << topSolute << endl;
                 if (in_s1 == 0)
                 {
-                    //cout << "topSolute = " << topSolute;
+                    cout << "topSolute = " << topSolute << endl;
                     //cout << "solute1: " << solute1 << " " << topSolute << " atoms ";
                     //cout <<  "solute1: " << topSolute << " atoms"; 
-                    cout << "solute names are as follows " << solute_names << endl;
-                    for( auto solute : solute_names)
+                    cout << "count of solvent atoms = " << count_solvent << endl;
+                    cout << " count of solute atoms = " << count_solute << endl;
+                    int assign = 0;
+                    cout << " solute_names = " << solute_names << endl;
+                    for(auto solute : solute_names){
+                        real_map[solute] = assign;
                         cout << " count of " << solute << " atoms = " << map_count[solute] << endl;
+                        assign += map_count[solute];
+                        //real_map[solute] = map_count[solute];
+                    }
+                    cout << " 1. real_map = " << real_map << endl;
                     //cout << "solute1: " << map_count[solute1_norm] << endl;
                 }
                 else
@@ -570,64 +690,81 @@ int main(int argc, char *argv[])
                         cout << "\n";
                 }
             }
-            real_map=mp;
-            int val=INT_MAX;
-            string now;
-            for(auto i:mp){
-                if(val>i.second){
-                    val=i.second;
-                    now=i.first;
-                }
-            }
-            solute1=now;
-            mp.erase(now);
-            val=INT_MAX;
-            if(mp.size()>0){
-                for(auto i:mp){
-                    if(val>i.second){
-                        val=i.second;
-                        now=i.first;
-                }
-                }
-                solute2=now;
-                mp.erase(now);
-                if(mp.size()>0){
-                    val=INT_MAX;
-                    for(auto i:mp){
-                    if(val<i.second){
-                    val=i.second;
-                    now=i.first;
-                }
-                }
-                solute3=now;
-                mp.erase(now);
-                if(mp.size()>0){
-                    val=INT_MAX;
-                    for(auto i:mp){
-                    if(val<i.second){
-                    val=i.second;
-                    now=i.first;
-                }
-                }
-                solute4=now;
-                mp.erase(now);
-                }
-            }
-            }
+          //real_map=mp;
+          //int val=INT_MAX;
+          //string now;
+          //for(auto i:mp){
+                //if(val>i.second){
+                    //val=i.second;
+                    //now=i.first;
+                //}
+            //}
+            //solute1=now;
+            //mp.erase(now);
+            //val=INT_MAX;
+            //if(mp.size()>0){
+                //for(auto i:mp){
+                    //if(val>i.second){
+                        //val=i.second;
+                        //now=i.first;
+                //}
+                //}
+                //solute2=now;
+                //mp.erase(now);
+                //if(mp.size()>0){
+                    //val=INT_MAX;
+                    //for(auto i:mp){
+                    //if(val<i.second){
+                    //val=i.second;
+                    //now=i.first;
+                //}
+                //}
+                //solute3=now;
+                //mp.erase(now);
+                //if(mp.size()>0){
+                    //val=INT_MAX;
+                    //for(auto i:mp){
+                    //if(val<i.second){
+                    //val=i.second;
+                    //now=i.first;
+                //}
+                //}
+                //solute4=now;
+                //mp.erase(now);
+                //}
+            //}
+            //}
             
             // Start of calculations for each frame
 
-            calc_Distance(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, topSolute, time, HBOND_DIST);
+            cout << "count_solute = " << count_solute << endl;
+            topSolute =  count_solute;
+            cout << "count_solvent = "<< count_solvent << endl;
+            //cout << " running calc_Distance( )" << endl;
+            //cout <<"My_neigh = " << My_neigh<<endl;
+            calc_Distance(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, time, HBOND_DIST);
+            //cout << " Nneigh = " << Nneigh.size()<< endl;
 
             vector<vector<int>> ring5, ring6, ring5_temp, ring6_temp;
             vector<vector<int>> My_neigh_ring6, My_neigh_ring5, My_neigh_ring6_ring5;
 
-            //cout << " Running ring_Finder " << endl; // to comment out later 
+            //cout << " Nneigh = " << Nneigh << endl;
+            //auto start = std::chrono::high_resolution_clock.now( );
+            //cout << " My_neigh after calc_Distance()= " << My_neigh.size() << endl;
             ring_Finder(count_solute, Natoms, Nneigh, My_neigh, ring5_temp, ring6_temp, topSolute, count_solvent, atom_positions, boxX, boxY, boxZ, HBOND_DIST, delta_p, delta_h);
+            //cout << "ring5_tempafter running ring_Finder = " << ring5_temp.size() << endl;
+            //auto stop = std::chrono::_V2::high_resolution_clock.now();
+            //auto duration = std::chrono::duration_cast<std::chrono::microseconds>( start - stop);
+            //cout << "ring_Finder runtime: " << duration.count() << endl;
+            //cout << " ring_Finder ran succesfully" << endl;
 
             if (ring5_temp.size() > 0)
+            {
                 coplanar_Points(ring5_temp, atom_positions, time, ring5, THETA); // Find the 5-rings which form a plane and get rid of the rest.
+            }
 
+            //cout << "removing duplicate 5-rings" << endl;
+            //cout << "ring5 before removing duplicates " << ring5.size() << endl;
             int count_ring5 = remove_duplicates_map_rings(ring5); // Remove duplicate lines from 5-rings.
 
             cout << "ring[5]: " << count_ring5 << "\n";
@@ -695,23 +832,35 @@ int main(int argc, char *argv[])
             vector<vector<int>> cage_512, cage_62512, cage_64512;
             vector<vector<int>> cage_512_rings, cage_62512_rings, cage_64512_rings;
 
-            int cage_512_count = 0;
+            cage_512_count = 0;
 
             if (count_512_cups > 0)
             {
 
+                //cout << "count_512_cups = " << count_512_cups << endl;
                 cage_512_count = cage_Finder(cup512, count_512_cups, My_neigh_ring5, cage_512, cage_512_rings, time);
 
+                //cout << "cage_512_count = " << cage_512_count << endl;
                 cage_512_count = remove_duplicates_map(cage_512_rings);
 
+                cout << "real_map = " << real_map << endl;
+                //cout << "No core dumped here either" << endl;
+                //cout << "solute1 = " << solute1 << endl;
+                //cout << "solute2 = " << solute2 << endl;
+                //cout << "solute3 = " << solute3 << endl;
+                //cout << "methane_512 = " << methane_512 << endl;
+                //solute1 = "CO2";
+                //solute2 = "METH";
+                //solute3 = "Met";
                 // Write output gro file only if frameCounter is a multiple of DT. if -dt is not provided, every frame will be written.
                 if (cage_512_count > 0 && (frameCounter % DT == 0))
-                    print_vmd_cage64512_frings(cup512, cage_512_count, cage_512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solutes, methane_512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map);
+                    print_vmd_cage64512_frings(cup512, cage_512_count, cage_512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solute_positions, methane_512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map,arr_str2, solute_atoms, molecules);
             }
 
+            cout << " Ab dekhte hai" << endl;
             cout << "# 5¹²\tcage: " << cage_512_count << "\n";
 
-            int cage_62512_count = 0;
+            cage_62512_count = 0;
             if (count_62512_cups > 0)
             {
                 cage_62512_count = cage_Finder(cup62512, count_62512_cups, My_neigh_ring5, cage_62512, cage_62512_rings, time);
@@ -720,29 +869,37 @@ int main(int argc, char *argv[])
 
                 // Write output gro file only if frameCounter is a multiple of DT. if -dt is not provided, every frame will be written.
                 if (cage_62512_count > 0 && (frameCounter % DT) == 0)
-                    print_vmd_cage64512_frings(cup62512, cage_62512_count, cage_62512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solutes, methane_62512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map);
+                    print_vmd_cage64512_frings(cup62512, cage_62512_count, cage_62512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solute_positions, methane_62512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map,arr_str2, solute_atoms, molecules);
             }
+            //cout << "No core dumped until here " << endl;
             cout << "# 6²5¹²\tcage: " << cage_62512_count << "\n";
             /**********************************************/
             /*Finding Cage 64512*/
-            int cage_64512_count = 0;
+            cage_64512_count = 0;
 
             cage_64512_count = cage_Finder_64512(cup62512, count_62512_cups, cage_64512_rings);
 
             //cout << " Now showing the output of method cage_Finder_64512() " << endl; // comment out later
+            //cout << " solute_atoms array = " << solute_atoms << endl;
             cout << "# 6⁴5¹²\tcage: " << cage_64512_count << "\n\n";
 
-            print_vmd_cage64512_frings(cup62512, cage_64512_count, cage_64512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solutes, methane_64512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map);
+            //cout << "arr_str2 = " << arr_str2 << endl;
+            print_vmd_cage64512_frings(cup62512, cage_64512_count, cage_64512_rings, ring5, ring6, atom_positions, time, rawFilename, box_size_xyz, solute_positions, methane_64512, topSolute, solute1, solute2,solute3, solute4, frameCounter,map_count,real_map, arr_str2, solute_atoms, molecules);
 
             /**********************************************/
 
             outFile << cage_512_count << "\t| " << methane_512 << "\t\t| " << cage_62512_count << "\t| " << methane_62512 << "\t\t| " << cage_64512_count << "\t| " << methane_64512 << endl;
+            //cout << "methane_512 = " << methane_512 << std::endl;   
+            outFile2 << std::string(5,' ')<< cage_512_count << std::string(8-to_string(cage_512_count).length(), ' ') << methane_512 << std::string(15-to_string(methane_512).length(), ' ') << cage_62512_count << std::string(10-to_string(cage_62512_count).length(), ' ') << methane_62512 << std::string(18-to_string(methane_62512).length(), ' ') << cage_64512_count << std::string(10-to_string(cage_64512_count).length(), ' ') << methane_64512 << std::string(18-to_string( methane_64512).length(), ' ');
+                ;
 
             if (in_F4 == 1) // If F4 flag is provided, calculate F4.
             {
+				
 				// ... //
 
-                F4_value = calc_F4(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, topSolute, time, HBOND_DIST);
+                F4_value = calc_F4(count_solvent, count_solute, My_neigh, atom_positions, boxX, boxY, boxZ, Nneigh, Natoms, topSolute, time, rawFilename, HBOND_DIST);
+                outFile2 << F4_value << std::endl;
                 
                 // ... //
 
@@ -752,18 +909,179 @@ int main(int argc, char *argv[])
                 
                 // ... //
             }
+            //atom_positions.clear();
+            arr_str2.clear();
         }
+
+        atom_positions.clear();
+        //arr_str2.clear();
+        //solute_atoms.clear();
+        solute_positions.clear();
+        iter++;
+        cout << " Finished " << iter << " number of iterations " << endl;
+        cout <<"\n";
+        //cout << "iter = " << iter << endl;
     } // End of reading the input file.
+
+
+    // Reading all the *cage* files
+    cout << "Reading cage files for caged solute atoms info " << endl;
+
+
+    //fstream OFILE(rawFilename+"_cageF4_info.dat", std::ios::app);
+    fstream OFILE(rawFilename+"_guest_info.dat", std::ios::app);
+    OFILE << "time" << std::string(5,' ');
+    for(auto it : real_map)
+        OFILE << "512"+it.first+"X" << std::string(5,' ');
+    for(auto it : real_map)
+        OFILE << "62512"+it.first+"X" << std::string(5,' ');
+    for(auto it : real_map)
+        OFILE << "64512"+it.first+"X" << std::string(5,' ');
+
+    for(auto it : real_map)
+        OFILE << it.first + "X" << std::string(5, ' ');
+    //OFILE.close();
+    //OFILE << std::string(5, ' ') << "512_total";
+    //OFILE << std::string(5, ' ') << "62512_sum";
+    //OFILE << std::string(5, ' ') << "64512_sum";
+    OFILE << "\n";
+
+    int last = 1;
+    for( int f = 1; f <= frameCounter; f++)
+    {
+        fstream concat_file512(inputFilename.substr(0,inputFilename.length()-4) + "_cage512_concat.gro", std::ios::app);
+        fstream concat_file62512(inputFilename.substr(0,inputFilename.length()-4) + "_cage62512_concat.gro", std::ios::app);
+        fstream concat_file64512(inputFilename.substr(0,inputFilename.length()-4) + "_cage64512_concat.gro", std::ios::app);
+
+        //fstream OFILE("caged.info", std::ios::app);
+        OFILE << f << std::string(9-std::to_string(f).length(), ' ');
+        //OFILE.close();
+        cout << "frame#: " << f << endl;
+        //if(cage_512_count)
+        //
+            std::string cage_file = inputFilename.substr(0,inputFilename.length()-4) + "_cage512-" + std::to_string(f) + ".gro";
+            std::map<std::string, int> caged_map = func(real_map, cage_file);
+            std::map<std::string, int> caged_512_map = func(real_map, cage_file);
+            
+            cout << "caged512_map = " << caged_map << endl;
+
+            //Write to file caged.info
+
+            std::string cage_type = "512";
+            for(auto it : caged_map)
+            {
+                int int1 = cage_type.size() + it.first.size() + 5 - std::to_string(it.second).size();
+                if(cage_512_count)
+                        OFILE << it.second << std::string(int1, ' ');
+                else OFILE << "0" << std::string(int1, ' ');
+            }
+
+            // concat all the cage512-*.gro files into one file
+        //if(cage_512_count)
+        {
+            ifstream cage512_file_stream(cage_file);
+            std::string line;
+            while(std::getline(cage512_file_stream, line))
+                concat_file512 << line << endl;
+        }
+        //if(cage_62512_count)
+        //
+            //std::string cage_file = inputFilename.substr(0,inputFilename.length()-4) + "_cage62512-" + std::to_string(f) + ".gro";
+            cage_file = inputFilename.substr(0,inputFilename.length()-4) + "_cage62512-" + std::to_string(f) + ".gro";
+            std::map<std::string, int> caged_62512_map = func(real_map, cage_file);
+            caged_map = func( real_map, cage_file);
+            cout << "caged62512_map = " << caged_map << std::endl;
+            
+            //Write to caged.info 
+            //std::string cage_type = "62512";
+            cage_type = "62512";
+            for(auto it : caged_62512_map)
+            {
+                int int1 = cage_type.size() + it.first.size() + 5 - std::to_string(it.second).size();
+                if(cage_62512_count)
+                        OFILE << it.second << std::string(int1, ' ');
+                else OFILE << "0" << std::string(int1, ' ');
+                //OFILE << it.second << std::string(int1, ' ');
+            }
+
+        //if(cage_62512_count)
+        {
+            // concat all the cage62512-*.gro files into one file
+            ifstream cage62512_file_stream(cage_file);
+            std::string line;
+            while(std::getline(cage62512_file_stream, line))
+                concat_file62512 << line << endl;
+        }
+        //if(cage_64512_count)
+        //
+            //std::string cage_file = inputFilename.substr(0,inputFilename.length()-4) + "_cage64512-" + std::to_string(f) + ".gro";
+            cage_file = inputFilename.substr(0,inputFilename.length()-4) + "_cage64512-" + std::to_string(f) + ".gro";
+            std::map<std::string, int> caged_64512_map = func(real_map, cage_file);
+            caged_map = func(real_map, cage_file);
+            cout << "caged64512_map = " << caged_map << endl;
+
+            //Write to caged.info 
+            //std::string cage_type = "64512";
+            cage_type = "64512";
+            for(auto it : caged_64512_map)
+            {
+                int int1 = cage_type.size() + it.first.size() + 5 - std::to_string(it.second).size();
+                if(cage_64512_count)
+                        OFILE << it.second << std::string(int1, ' ');
+                else OFILE << "0" << std::string(int1, ' ');
+                //OFILE << it.second << std::string(int1, ' ');
+            }
+
+        //if(cage_64512_count)
+        {
+            // concat all the cage64512-*.gro files into one file
+            ifstream cage64512_file_stream(cage_file);
+            std::string line;
+            while(std::getline(cage64512_file_stream, line))
+                concat_file64512 << line << endl;
+        }
+        
+        
+        //fstream OFILE("caged.info", std::ios::app);
+        //OFILE << std::endl;
+        //OFILE.close();
+        for(auto it = caged_512_map.begin(); it != caged_512_map.end(); it++)
+        {
+            std::string key = it->first;
+            int tot_count = caged_512_map[key] + caged_62512_map[key] + caged_64512_map[key];
+            cout << "1. " << caged_512_map[key];
+            cout << "1. " << caged_62512_map[key];
+            cout << "1. " << caged_64512_map[key];
+            OFILE << tot_count << std::string(key.length()+5-to_string(tot_count).length(), ' ');
+            
+        }
+        OFILE <<"\n";
+
+        concat_file512.close();
+        concat_file62512.close();
+        concat_file64512.close();
+
+        cout << "\n";
+
+        last = f;
+
+    }
+    
+    std::map<int, double> f4_vs_z = calc_time_avg_f4_z("binning_z.xvg", last);
+    //for(auto it1: f4_vs_z)
+        //it1.second = it1.second/frameCounter;
+    cout << f4_vs_z;
+
+    ofstream obj("time_avergaed_f4.xvg");
+    for(auto it1 : f4_vs_z)
+        obj <<  it1.first << " " << it1.second << std::endl;
+    obj.close();
+    OFILE.close();
 
     fileIN.close();
     outFile.close();
+    outFile2.close();
 
-    // ... //
-
-    //Line not required if the file was never opened
-    //if( in_F4 == 1 )outFile_F4.close();
-
-    // ... //
 
     return 0;
 
